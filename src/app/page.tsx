@@ -37,6 +37,10 @@ export default function HomePage() {
   const [signModal, setSignModal] = useState<{ memberId: string; name: string; currentStatus: "in" | "out" | "none" } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ memberId: string; name: string } | null>(null);
   const [toast, setToast] = useState<{ message: string; recordId: string } | null>(null);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [undoMenu, setUndoMenu] = useState<{ memberId: string; name: string; x: number; y: number } | null>(null);
+  const [lastBatch, setLastBatch] = useState<string[]>([]); // record IDs for batch undo
 
   const [historyDays, setHistoryDays] = useState<any[]>([]);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -144,12 +148,39 @@ export default function HomePage() {
   }
 
   function handleCardClick(memberId: string, name: string, currentStatus: "in" | "out" | "none") {
+    if (batchMode) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(memberId)) next.delete(memberId); else next.add(memberId);
+        return next;
+      });
+      return;
+    }
     if (currentStatus === "in") {
-      // Already checked in - confirm before sign-out
       setConfirmModal({ memberId, name });
+    } else if (currentStatus === "out") {
+      // Show undo mini-menu - position near the click
+      setUndoMenu({ memberId, name, x: window.innerWidth / 2, y: window.innerHeight / 2 });
     } else {
       setSignModal({ memberId, name, currentStatus });
     }
+  }
+
+  async function handleUndoCheckout(memberId: string) {
+    // Find and delete the last "out" record for this member today
+    const bjNow = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
+    const todayStr = bjNow.toISOString().split("T")[0];
+    const res = await fetch(`/api/teams/${teamId}/records?from=${todayStr}&to=${todayStr}`);
+    const data = await res.json();
+    // Find today's records, get the out record
+    const todayRecords = data.days[0]?.records || [];
+    const lastOut = todayRecords.find((r: any) => r.type === "out" && r.memberName === status?.members.find(m => m.id === memberId)?.name);
+    if (lastOut) {
+      await fetch(`/api/records/${lastOut.id}`, { method: "DELETE" });
+      setToast({ message: `已撤销签退`, recordId: lastOut.id });
+    }
+    setUndoMenu(null);
+    await fetchStatus();
   }
 
   function handleConfirmSignOut() {
@@ -174,11 +205,47 @@ export default function HomePage() {
     setToast({ message: `${signModal.name} 已${actionLabel}`, recordId: record.id });
   }
 
-  async function handleUndo() {
-    if (!toast) return;
-    await fetch(`/api/records/${toast.recordId}`, { method: "DELETE" });
+  async function handleBatch(action: "in" | "out") {
+    const ids = Array.from(selectedIds);
+    const records: string[] = [];
+    for (const memberId of ids) {
+      const res = await fetch(`/api/teams/${teamId}/checkin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, type: action, signature: null }),
+      });
+      const record = await res.json();
+      records.push(record.id);
+    }
+    setLastBatch(records);
+    const label = action === "in" ? "签到" : "签退";
+    setToast({ message: `批量${label} ${ids.length} 人`, recordId: records.join(",") });
+    setBatchMode(false);
+    await fetchStatus();
+  }
+
+  async function handleBatchUndo() {
+    if (lastBatch.length === 0) return;
+    const ids = lastBatch[0].split(",");
+    for (const id of ids) {
+      await fetch(`/api/records/${id}`, { method: "DELETE" });
+    }
+    setLastBatch([]);
     setToast(null);
     await fetchStatus();
+  }
+
+  async function handleUndo() {
+    if (!toast) return;
+    if (toast.recordId.includes(",")) {
+      // Batch undo
+      await handleBatchUndo();
+    } else {
+      // Single undo
+      await fetch(`/api/records/${toast.recordId}`, { method: "DELETE" });
+      setToast(null);
+      await fetchStatus();
+    }
   }
 
   const viewUrl = teamId ? `${window.location.origin}/view/${teamId}` : "";
@@ -189,7 +256,11 @@ export default function HomePage() {
       <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
-        <div className="w-8" />
+        {teamId && (
+          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set(status?.members.map(m => m.id) || [])); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
+            {batchMode ? "取消" : "批量"}
+          </button>
+        )}
       </div>
 
       {/* Tab Bar */}
@@ -231,14 +302,25 @@ export default function HomePage() {
         <div className="flex-1 flex flex-col">
           <div className="flex-1 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 content-start">
             {status.members.map((m) => (
-              <MemberCard
-                key={m.id}
-                name={m.name}
-                status={m.status}
-                lastCheckIn={m.lastCheckIn}
-                lastCheckOut={m.lastCheckOut}
-                onClick={() => handleCardClick(m.id, m.name, m.status)}
-              />
+              <div key={m.id} className="relative">
+                {batchMode && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(m.id)}
+                      onChange={() => handleCardClick(m.id, m.name, m.status)}
+                      className="w-5 h-5 accent-blue-600"
+                    />
+                  </div>
+                )}
+                <MemberCard
+                  name={m.name}
+                  status={m.status}
+                  lastCheckIn={m.lastCheckIn}
+                  lastCheckOut={m.lastCheckOut}
+                  onClick={() => handleCardClick(m.id, m.name, m.status)}
+                />
+              </div>
             ))}
             <button
               onClick={() => setAddModalOpen(true)}
@@ -248,6 +330,16 @@ export default function HomePage() {
             </button>
           </div>
           <StatsBar {...status.stats} />
+          {batchMode && (
+            <div className="bg-white border-t px-4 py-3 flex gap-3 justify-center">
+              <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                全部签到
+              </button>
+              <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                全部签退
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -262,6 +354,20 @@ export default function HomePage() {
             onToChange={setDateTo}
             onViewSignature={(name, strokes, label) => setSigViewer({ name, strokes, label })}
           />
+        </div>
+      )}
+
+      {/* Undo Checkout Mini Menu */}
+      {undoMenu && (
+        <div className="fixed inset-0 z-50" onClick={() => setUndoMenu(null)}>
+          <div className="absolute bg-white rounded-xl shadow-lg border p-2" style={{ left: undoMenu.x - 80, top: undoMenu.y - 40 }}>
+            <button onClick={() => handleUndoCheckout(undoMenu.memberId)} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-lg">
+              撤销签退
+            </button>
+            <button onClick={() => setUndoMenu(null)} className="block w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-100 rounded-lg">
+              关闭
+            </button>
+          </div>
         </div>
       )}
 
