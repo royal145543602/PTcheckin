@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       memberName: r.memberName,
       type: r.type,
       time: r.time,
-      signature: r.signature ? JSON.parse(r.signature) : null,
+      signature: (() => { try { return r.signature ? JSON.parse(r.signature) : null; } catch { return null; } })(),
     });
   }
 

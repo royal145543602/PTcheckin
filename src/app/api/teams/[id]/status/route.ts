@@ -31,8 +31,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const lastCheckIn = lastIn?.time || null;
     const lastCheckOut = lastOut?.time || null;
-    const lastSignatureIn = lastIn?.signature ? JSON.parse(lastIn.signature) : null;
-    const lastSignatureOut = lastOut?.signature ? JSON.parse(lastOut.signature) : null;
+    let lastSignatureIn: any = null;
+    let lastSignatureOut: any = null;
+    try { lastSignatureIn = lastIn?.signature ? JSON.parse(lastIn.signature) : null; } catch { lastSignatureIn = null; }
+    try { lastSignatureOut = lastOut?.signature ? JSON.parse(lastOut.signature) : null; } catch { lastSignatureOut = null; }
 
     const status = lastRecord.type === "in" ? "in" : "out";
 
