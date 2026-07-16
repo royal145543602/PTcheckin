@@ -271,14 +271,7 @@ export default function HomePage() {
       <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
-        {teamId && (
-          <div className="flex items-center gap-3">
-            <button onClick={() => setAddModalOpen(true)} className="text-sm font-medium text-gray-500">＋</button>
-            <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
-              {batchMode ? "退出批量" : "批量"}
-            </button>
-          </div>
-        )}
+        {teamId && <div className="w-8" />}
       </div>
 
       {/* Tab Bar */}
@@ -340,12 +333,6 @@ export default function HomePage() {
                 />
               </div>
             ))}
-            <button
-              onClick={() => setAddModalOpen(true)}
-              className="min-h-[80px] sm:min-h-[100px] rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-lg font-medium hover:border-gray-400 transition-colors"
-            >
-              + 添加
-            </button>
           </div>
           <StatsBar {...status.stats} />
           {batchMode && (
@@ -441,6 +428,9 @@ export default function HomePage() {
         }}
         undoStack={undoStack}
         onUndo={handleUndo}
+        batchMode={batchMode}
+        onToggleBatch={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }}
+        onAddMemberClick={() => setAddModalOpen(true)}
         viewUrl={viewUrl}
       />
 

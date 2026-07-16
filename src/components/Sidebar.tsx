@@ -28,10 +28,13 @@ interface SidebarProps {
   onDeleteTeam: (id: string) => Promise<void>;
   undoStack: { recordIds: string[]; label: string }[];
   onUndo: (index: number) => void;
+  batchMode: boolean;
+  onToggleBatch: () => void;
+  onAddMemberClick: () => void;
   viewUrl: string;
 }
 
-export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, viewUrl }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, batchMode, onToggleBatch, onAddMemberClick, viewUrl }: SidebarProps) {
   const [newName, setNewName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [renaming, setRenaming] = useState(false);
@@ -147,6 +150,14 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
               <br/>
               <button onClick={() => checkPin(() => { if (confirm("删除团队及其所有成员和记录？")) onDeleteTeam(selectedTeamId); })} className="text-xs text-red-500 underline">
                 删除团队
+              </button>
+            </div>
+          )}
+          {selectedTeamId && (
+            <div className="flex gap-2">
+              <button onClick={onAddMemberClick} className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-sm font-medium">＋ 添加成员</button>
+              <button onClick={onToggleBatch} className={`flex-1 py-1.5 rounded-lg text-sm font-medium ${batchMode ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"}`}>
+                {batchMode ? "退出批量" : "批量操作"}
               </button>
             </div>
           )}
