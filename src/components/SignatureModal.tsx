@@ -15,13 +15,26 @@ interface SignatureModalProps {
 export default function SignatureModal({ isOpen, onClose, onConfirm, memberName, actionType }: SignatureModalProps) {
   const [strokes, setStrokes] = useState<SignatureData>([]);
   const [loading, setLoading] = useState(false);
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   if (!isOpen) return null;
 
   const handleConfirm = async () => {
+    if (strokes.length === 0) {
+      setConfirmSkip(true);
+      return;
+    }
     setLoading(true);
-    await onConfirm(strokes.length > 0 ? strokes : null);
+    await onConfirm(strokes);
     setStrokes([]);
+    setLoading(false);
+  };
+
+  const handleForceConfirm = async () => {
+    setLoading(true);
+    await onConfirm(null);
+    setStrokes([]);
+    setConfirmSkip(false);
     setLoading(false);
   };
 
@@ -33,6 +46,25 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
   };
 
   const actionLabel = actionType === "in" ? "签到" : "签退";
+
+  if (confirmSkip) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setConfirmSkip(false)}>
+        <div className="bg-white rounded-2xl p-6 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+          <h3 className="text-lg font-bold mb-2">还没签名</h3>
+          <p className="text-sm text-gray-500 mb-4">确定要跳过签名吗？</p>
+          <div className="flex gap-3">
+            <button onClick={() => setConfirmSkip(false)} disabled={loading} className="flex-1 bg-gray-200 py-3 rounded-xl text-base font-medium">
+              继续签名
+            </button>
+            <button onClick={handleForceConfirm} disabled={loading} className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-base font-medium disabled:opacity-50">
+              确定跳过
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
