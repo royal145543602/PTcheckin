@@ -11,12 +11,19 @@ export interface Member {
   isPreset: boolean;
 }
 
+export interface SignatureStroke {
+  points: { x: number; y: number }[];
+}
+
+export type SignatureData = SignatureStroke[];
+
 export interface Record {
   id: string;
   memberId: string;
   teamId: string;
   type: "in" | "out";
   time: string;
+  signature: string | null;
 }
 
 export interface MemberStatus {
@@ -25,6 +32,8 @@ export interface MemberStatus {
   status: "in" | "out" | "none";
   lastCheckIn: string | null;
   lastCheckOut: string | null;
+  lastSignatureIn: SignatureData | null;
+  lastSignatureOut: SignatureData | null;
 }
 
 export interface TeamStatus {

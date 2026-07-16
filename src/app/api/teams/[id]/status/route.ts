@@ -15,11 +15,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const membersWithStatus: MemberStatus[] = members.map((m: any) => {
     const lastRecord = db.prepare(
-      "SELECT type, time FROM records WHERE member_id = ? ORDER BY time DESC LIMIT 1"
+      "SELECT type, time FROM records WHERE member_id = ? ORDER BY time DESC, rowid DESC LIMIT 1"
     ).get(m.id) as any;
 
     if (!lastRecord) {
-      return { id: m.id, name: m.name, status: "none", lastCheckIn: null, lastCheckOut: null };
+      return { id: m.id, name: m.name, status: "none", lastCheckIn: null, lastCheckOut: null, lastSignatureIn: null, lastSignatureOut: null };
     }
 
     const allRecords = db.prepare(
@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const status = lastRecord.type === "in" ? "in" : "out";
 
-    return { id: m.id, name: m.name, status, lastCheckIn, lastCheckOut };
+    return { id: m.id, name: m.name, status, lastCheckIn, lastCheckOut, lastSignatureIn: null, lastSignatureOut: null };
   });
 
   const present = membersWithStatus.filter((m) => m.status === "in").length;
