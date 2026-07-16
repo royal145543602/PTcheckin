@@ -285,6 +285,14 @@ export default function HomePage() {
       {/* Check-in Tab */}
       {teamId && tab === "checkin" && status && (
         <div className="flex-1 flex flex-col">
+          {/* Undo Banner - always visible */}
+          <div className={`px-4 py-2 text-center text-sm transition-colors ${lastAction ? "bg-yellow-100 border-b border-yellow-300" : "bg-gray-100 border-b text-gray-400"}`}>
+            {lastAction ? (
+              <>↩ 上次操作：{lastAction.label} <button onClick={handleUndo} className="text-yellow-700 underline font-bold ml-2">撤销</button></>
+            ) : (
+              "暂无操作记录"
+            )}
+          </div>
           <div className="flex-1 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 content-start">
             {status.members.map((m) => (
               <div key={m.id} className="relative">
@@ -315,12 +323,6 @@ export default function HomePage() {
             </button>
           </div>
           <StatsBar {...status.stats} />
-          {lastAction && (
-            <div className="bg-yellow-50 border-t border-yellow-200 px-4 py-2 flex items-center justify-between">
-              <span className="text-sm text-yellow-800">上次操作：{lastAction.label}</span>
-              <button onClick={handleUndo} className="text-sm text-yellow-700 underline font-medium">撤销</button>
-            </div>
-          )}
           {batchMode && (
             <div className="bg-white border-t px-4 py-3 space-y-2">
               <div className="flex gap-2 justify-center">
