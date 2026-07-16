@@ -78,7 +78,7 @@ export default function SignaturePad({ strokes, onChange, width = 800, height = 
       ref={canvasRef}
       width={width}
       height={height}
-      className="w-full max-w-[400px] h-[200px] border-2 border-gray-300 rounded-xl bg-white touch-none cursor-crosshair"
+      className="w-full h-full min-h-[300px] border-2 border-gray-300 rounded-xl bg-white touch-none cursor-crosshair"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
