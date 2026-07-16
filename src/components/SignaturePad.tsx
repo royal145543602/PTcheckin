@@ -10,7 +10,7 @@ interface SignaturePadProps {
   height?: number;
 }
 
-export default function SignaturePad({ strokes, onChange, width = 400, height = 200 }: SignaturePadProps) {
+export default function SignaturePad({ strokes, onChange, width = 800, height = 500 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
   const currentStroke = useRef<{ x: number; y: number }[]>([]);

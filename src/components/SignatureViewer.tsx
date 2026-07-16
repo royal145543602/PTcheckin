@@ -8,7 +8,7 @@ interface SignatureViewerProps {
   height?: number;
 }
 
-export default function SignatureViewer({ strokes, width = 400, height = 200 }: SignatureViewerProps) {
+export default function SignatureViewer({ strokes, width = 700, height = 400 }: SignatureViewerProps) {
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}

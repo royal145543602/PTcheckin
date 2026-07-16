@@ -67,23 +67,31 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-1">
-          {actionLabel} - {memberName}
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">请签名确认</p>
-
-        <div className="flex justify-center mb-3">
-          <SignaturePad strokes={strokes} onChange={setStrokes} />
+    <div className="fixed inset-0 bg-black/70 flex flex-col z-50" onClick={onClose}>
+      {/* Header */}
+      <div className="bg-white px-6 py-3 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+        <div>
+          <h3 className="text-xl font-bold">{actionLabel} - {memberName}</h3>
+          <p className="text-sm text-gray-500">请签名确认</p>
         </div>
+        <button onClick={onClose} className="text-gray-400 text-2xl">&times;</button>
+      </div>
 
-        <div className="flex gap-2 mb-4">
+      {/* Canvas area - fills remaining space */}
+      <div className="flex-1 flex items-center justify-center bg-gray-100 p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-2xl shadow-lg p-4 w-full max-w-2xl">
+          <SignaturePad strokes={strokes} onChange={setStrokes} width={700} height={400} />
+        </div>
+      </div>
+
+      {/* Bottom controls */}
+      <div className="bg-white px-6 py-4 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setStrokes(strokes.slice(0, -1))}
             disabled={strokes.length === 0}
-            className="text-sm px-3 py-1.5 border rounded-lg disabled:opacity-30"
+            className="text-sm px-4 py-2 border rounded-lg disabled:opacity-30"
           >
             撤销
           </button>
@@ -91,24 +99,23 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
             type="button"
             onClick={() => setStrokes([])}
             disabled={strokes.length === 0}
-            className="text-sm px-3 py-1.5 border rounded-lg disabled:opacity-30"
+            className="text-sm px-4 py-2 border rounded-lg disabled:opacity-30"
           >
             清除
           </button>
         </div>
-
         <div className="flex gap-3">
           <button
             onClick={handleSkip}
             disabled={loading}
-            className="flex-1 bg-gray-200 py-3 rounded-xl text-base font-medium disabled:opacity-50"
+            className="bg-gray-200 px-6 py-3 rounded-xl text-base font-medium disabled:opacity-50"
           >
             跳过签名
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-base font-medium disabled:opacity-50"
+            className="bg-blue-600 text-white px-8 py-3 rounded-xl text-base font-medium disabled:opacity-50"
           >
             确认{actionLabel}
           </button>
