@@ -315,24 +315,6 @@ export default function HomePage() {
       {/* Check-in Tab */}
       {teamId && tab === "checkin" && status && (
         <div className="flex-1 flex flex-col">
-          {/* Undo Banner - shows undo stack */}
-          <div className={`px-3 py-1.5 text-sm border-b ${undoStack.length > 0 ? "bg-yellow-50 border-yellow-200" : "bg-gray-100 border-gray-200 text-gray-400"}`}>
-            {undoStack.length === 0 ? (
-              <span>暂无操作记录（刷新不丢失）</span>
-            ) : (
-              <div className="space-y-1">
-                {undoStack.slice(0, 5).map((entry, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-yellow-800">↩ {entry.label}</span>
-                    <button onClick={() => handleUndo(i)} className="text-yellow-700 underline text-xs font-bold">撤销</button>
-                  </div>
-                ))}
-                {undoStack.length > 5 && (
-                  <span className="text-gray-400 text-xs">...还有 {undoStack.length - 5} 条</span>
-                )}
-              </div>
-            )}
-          </div>
           <div className="flex-1 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 content-start">
             {status.members.map((m) => (
               <div key={m.id} className="relative">
@@ -454,6 +436,8 @@ export default function HomePage() {
           await fetchTeams();
           setMembers([]);
         }}
+        undoStack={undoStack}
+        onUndo={handleUndo}
         viewUrl={viewUrl}
       />
 

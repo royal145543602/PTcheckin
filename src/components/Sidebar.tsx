@@ -26,10 +26,12 @@ interface SidebarProps {
   onCreateTeam: (name: string) => Promise<void>;
   onRenameTeam: (id: string, name: string) => Promise<void>;
   onDeleteTeam: (id: string) => Promise<void>;
+  undoStack: { recordIds: string[]; label: string }[];
+  onUndo: (index: number) => void;
   viewUrl: string;
 }
 
-export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, viewUrl }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, viewUrl }: SidebarProps) {
   const [newName, setNewName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [renaming, setRenaming] = useState(false);
@@ -168,6 +170,23 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+          {selectedTeamId && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">最近操作</h3>
+              {undoStack.length === 0 ? (
+                <p className="text-xs text-gray-400">暂无</p>
+              ) : (
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {undoStack.slice(0, 10).map((entry, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs py-1">
+                      <span className="text-gray-700">↩ {entry.label}</span>
+                      <button onClick={() => onUndo(i)} className="text-yellow-600 underline">撤销</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {selectedTeamId && (
