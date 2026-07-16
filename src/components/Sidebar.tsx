@@ -154,14 +154,6 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
             </div>
           )}
           {selectedTeamId && (
-            <div className="flex gap-2">
-              <button onClick={onAddMemberClick} className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-sm font-medium">＋ 添加成员</button>
-              <button onClick={onToggleBatch} className={`flex-1 py-1.5 rounded-lg text-sm font-medium ${batchMode ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"}`}>
-                {batchMode ? "退出批量" : "批量操作"}
-              </button>
-            </div>
-          )}
-          {selectedTeamId && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">成员管理</h3>
               <form onSubmit={handleAdd} className="flex gap-2 mb-2">
