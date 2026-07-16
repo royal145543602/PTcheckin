@@ -39,8 +39,12 @@ export default function HomePage() {
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [undoMenu, setUndoMenu] = useState<{ memberId: string; name: string; x: number; y: number } | null>(null);
-  // Unified undo state: records last action (single or batch) until undone or replaced
-  const [lastAction, setLastAction] = useState<{ recordIds: string[]; label: string } | null>(null);
+  // Undo stack: newest first, persisted to localStorage
+  type UndoEntry = { recordIds: string[]; label: string };
+  const [undoStack, setUndoStack] = useState<UndoEntry[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("undoStack") || "[]"); } catch { return []; }
+  });
 
   const [historyDays, setHistoryDays] = useState<any[]>([]);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -194,7 +198,12 @@ export default function HomePage() {
     setSignModal(null);
     await fetchStatus();
     const actionLabel = type === "in" ? "签到" : "签退";
-    setLastAction({ recordIds: [record.id], label: `${signModal.name} ${actionLabel}` });
+    const entry: UndoEntry = { recordIds: [record.id], label: `${signModal.name} ${actionLabel}` };
+    setUndoStack(prev => {
+      const next = [entry, ...prev].slice(0, 20);
+      localStorage.setItem("undoStack", JSON.stringify(next));
+      return next;
+    });
   }
 
   async function handleBatch(action: "in" | "out") {
@@ -220,16 +229,26 @@ export default function HomePage() {
       records.push(record.id);
     }
     const label = action === "in" ? "签到" : "签退";
-    setLastAction({ recordIds: records, label: `批量${label} ${validIds.length} 人` });
+    const entry: UndoEntry = { recordIds: records, label: `批量${label} ${validIds.length} 人` };
+    setUndoStack(prev => {
+      const next = [entry, ...prev].slice(0, 20);
+      localStorage.setItem("undoStack", JSON.stringify(next));
+      return next;
+    });
     await fetchStatus();
   }
 
-  async function handleUndo() {
-    if (!lastAction) return;
-    for (const id of lastAction.recordIds) {
+  async function handleUndo(index: number) {
+    const entry = undoStack[index];
+    if (!entry) return;
+    for (const id of entry.recordIds) {
       await fetch(`/api/records/${id}`, { method: "DELETE" });
     }
-    setLastAction(null);
+    setUndoStack(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      localStorage.setItem("undoStack", JSON.stringify(next));
+      return next;
+    });
     await fetchStatus();
   }
 
@@ -285,12 +304,22 @@ export default function HomePage() {
       {/* Check-in Tab */}
       {teamId && tab === "checkin" && status && (
         <div className="flex-1 flex flex-col">
-          {/* Undo Banner - always visible */}
-          <div className={`px-4 py-2 text-center text-sm transition-colors ${lastAction ? "bg-yellow-100 border-b border-yellow-300" : "bg-gray-100 border-b text-gray-400"}`}>
-            {lastAction ? (
-              <>↩ 上次操作：{lastAction.label} <button onClick={handleUndo} className="text-yellow-700 underline font-bold ml-2">撤销</button></>
+          {/* Undo Banner - shows undo stack */}
+          <div className={`px-3 py-1.5 text-sm border-b ${undoStack.length > 0 ? "bg-yellow-50 border-yellow-200" : "bg-gray-100 border-gray-200 text-gray-400"}`}>
+            {undoStack.length === 0 ? (
+              <span>暂无操作记录（刷新不丢失）</span>
             ) : (
-              "暂无操作记录"
+              <div className="space-y-1">
+                {undoStack.slice(0, 5).map((entry, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-yellow-800">↩ {entry.label}</span>
+                    <button onClick={() => handleUndo(i)} className="text-yellow-700 underline text-xs font-bold">撤销</button>
+                  </div>
+                ))}
+                {undoStack.length > 5 && (
+                  <span className="text-gray-400 text-xs">...还有 {undoStack.length - 5} 条</span>
+                )}
+              </div>
             )}
           </div>
           <div className="flex-1 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 content-start">
@@ -340,7 +369,7 @@ export default function HomePage() {
                 <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
                   全部签退
                 </button>
-                <button onClick={handleUndo} disabled={!lastAction} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-30">
+                <button onClick={() => handleUndo(0)} disabled={undoStack.length === 0} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-30">
                   撤回上一步
                 </button>
               </div>
