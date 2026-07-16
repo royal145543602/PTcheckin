@@ -215,7 +215,6 @@ export default function HomePage() {
       return member.status === "in";  // only sign out those present
     });
     if (validIds.length === 0) {
-      setBatchMode(false);
       return;
     }
     const records: string[] = [];
@@ -266,8 +265,8 @@ export default function HomePage() {
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
         {teamId && (
-          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
-            {batchMode ? "取消" : "批量"}
+          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); setLastBatch([]); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
+            {batchMode ? "退出批量" : "批量"}
           </button>
         )}
       </div>
@@ -349,25 +348,19 @@ export default function HomePage() {
                   全部取消
                 </button>
               </div>
-              {lastBatch.length === 0 ? (
-                <div className="flex gap-3 justify-center">
-                  <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-                    全部签到
-                  </button>
-                  <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-                    全部签退
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-3 justify-center">
-                  <span className="text-sm text-gray-500 py-2.5">已批量操作 {lastBatch.length} 人</span>
-                  <button onClick={handleBatchUndo} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium">
-                    撤回上一步
-                  </button>
-                  <button onClick={() => { setLastBatch([]); setBatchMode(false); }} className="text-sm text-gray-400 underline py-2.5">
-                    完成
-                  </button>
-                </div>
+              <div className="flex gap-3 justify-center">
+                <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                  全部签到
+                </button>
+                <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                  全部签退
+                </button>
+                <button onClick={handleBatchUndo} disabled={lastBatch.length === 0} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-30">
+                  撤回上一步
+                </button>
+              </div>
+              {lastBatch.length > 0 && (
+                <p className="text-center text-xs text-gray-500">上次批量操作了 {lastBatch.length} 人</p>
               )}
             </div>
           )}
