@@ -231,18 +231,16 @@ export default function HomePage() {
     setLastBatch(records);
     const label = action === "in" ? "签到" : "签退";
     setToast({ message: `批量${label} ${validIds.length} 人`, recordId: records.join(",") });
-    setBatchMode(false);
     await fetchStatus();
   }
 
   async function handleBatchUndo() {
-    if (!toast || !toast.recordId.includes(",")) return;
-    const ids = toast.recordId.split(",");
-    for (const id of ids) {
+    if (lastBatch.length === 0) return;
+    for (const id of lastBatch) {
       await fetch(`/api/records/${id}`, { method: "DELETE" });
     }
-    setToast(null);
     setLastBatch([]);
+    setToast(null);
     await fetchStatus();
   }
 
@@ -351,14 +349,26 @@ export default function HomePage() {
                   全部取消
                 </button>
               </div>
-              <div className="flex gap-3 justify-center">
-                <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-                  全部签到
-                </button>
-                <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-                  全部签退
-                </button>
-              </div>
+              {lastBatch.length === 0 ? (
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                    全部签到
+                  </button>
+                  <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                    全部签退
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-3 justify-center">
+                  <span className="text-sm text-gray-500 py-2.5">已批量操作 {lastBatch.length} 人</span>
+                  <button onClick={handleBatchUndo} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium">
+                    撤回上一步
+                  </button>
+                  <button onClick={() => { setLastBatch([]); setBatchMode(false); }} className="text-sm text-gray-400 underline py-2.5">
+                    完成
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -443,7 +453,7 @@ export default function HomePage() {
       )}
       {/* Undo Toast */}
       {toast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-4 z-50">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-4 z-[100]">
           <span className="text-sm">✅ {toast.message}</span>
           <button onClick={handleUndo} className="text-sm text-yellow-400 font-medium underline">撤销</button>
         </div>
