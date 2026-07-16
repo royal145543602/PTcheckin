@@ -271,7 +271,11 @@ export default function HomePage() {
       <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
-        {teamId && <div className="w-8" />}
+        {teamId && (
+          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
+            {batchMode ? "退出批量" : "批量"}
+          </button>
+        )}
       </div>
 
       {/* Tab Bar */}
