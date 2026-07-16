@@ -206,9 +206,20 @@ export default function HomePage() {
   }
 
   async function handleBatch(action: "in" | "out") {
-    const ids = Array.from(selectedIds);
+    if (!status) return;
+    // Filter: only sign in those NOT already in, only sign out those who ARE in
+    const validIds = Array.from(selectedIds).filter((id) => {
+      const member = status.members.find((m) => m.id === id);
+      if (!member) return false;
+      if (action === "in") return member.status !== "in";  // skip already signed in
+      return member.status === "in";  // only sign out those present
+    });
+    if (validIds.length === 0) {
+      setBatchMode(false);
+      return;
+    }
     const records: string[] = [];
-    for (const memberId of ids) {
+    for (const memberId of validIds) {
       const res = await fetch(`/api/teams/${teamId}/checkin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,19 +230,19 @@ export default function HomePage() {
     }
     setLastBatch(records);
     const label = action === "in" ? "签到" : "签退";
-    setToast({ message: `批量${label} ${ids.length} 人`, recordId: records.join(",") });
+    setToast({ message: `批量${label} ${validIds.length} 人`, recordId: records.join(",") });
     setBatchMode(false);
     await fetchStatus();
   }
 
   async function handleBatchUndo() {
-    if (lastBatch.length === 0) return;
-    const ids = lastBatch[0].split(",");
+    if (!toast || !toast.recordId.includes(",")) return;
+    const ids = toast.recordId.split(",");
     for (const id of ids) {
       await fetch(`/api/records/${id}`, { method: "DELETE" });
     }
-    setLastBatch([]);
     setToast(null);
+    setLastBatch([]);
     await fetchStatus();
   }
 
@@ -257,7 +268,7 @@ export default function HomePage() {
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
         {teamId && (
-          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set(status?.members.map(m => m.id) || [])); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
+          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
             {batchMode ? "取消" : "批量"}
           </button>
         )}
@@ -331,13 +342,23 @@ export default function HomePage() {
           </div>
           <StatsBar {...status.stats} />
           {batchMode && (
-            <div className="bg-white border-t px-4 py-3 flex gap-3 justify-center">
-              <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-                全部签到
-              </button>
-              <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-                全部签退
-              </button>
+            <div className="bg-white border-t px-4 py-3 space-y-2">
+              <div className="flex gap-2 justify-center">
+                <button onClick={() => setSelectedIds(new Set(status?.members.map(m => m.id) || []))} className="text-xs text-blue-600 underline">
+                  全选
+                </button>
+                <button onClick={() => setSelectedIds(new Set())} className="text-xs text-gray-400 underline">
+                  全部取消
+                </button>
+              </div>
+              <div className="flex gap-3 justify-center">
+                <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                  全部签到
+                </button>
+                <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                  全部签退
+                </button>
+              </div>
             </div>
           )}
         </div>
