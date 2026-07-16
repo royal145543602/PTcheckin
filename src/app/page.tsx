@@ -35,6 +35,8 @@ export default function HomePage() {
   const [status, setStatus] = useState<TeamStatus | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [signModal, setSignModal] = useState<{ memberId: string; name: string; currentStatus: "in" | "out" | "none" } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ memberId: string; name: string } | null>(null);
+  const [toast, setToast] = useState<{ message: string; recordId: string } | null>(null);
 
   const [historyDays, setHistoryDays] = useState<any[]>([]);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -57,6 +59,12 @@ export default function HomePage() {
     const timer = setInterval(tick, 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // Load teams
   const fetchTeams = useCallback(async () => {
@@ -136,18 +144,40 @@ export default function HomePage() {
   }
 
   function handleCardClick(memberId: string, name: string, currentStatus: "in" | "out" | "none") {
-    setSignModal({ memberId, name, currentStatus });
+    if (currentStatus === "in") {
+      // Already checked in - confirm before sign-out
+      setConfirmModal({ memberId, name });
+    } else {
+      setSignModal({ memberId, name, currentStatus });
+    }
+  }
+
+  function handleConfirmSignOut() {
+    if (!confirmModal) return;
+    setSignModal({ memberId: confirmModal.memberId, name: confirmModal.name, currentStatus: "in" });
+    setConfirmModal(null);
   }
 
   async function handleSignConfirm(signature: SignatureData | null) {
     if (!signModal || !teamId) return;
     const type = signModal.currentStatus === "in" ? "out" : "in";
-    await fetch(`/api/teams/${teamId}/checkin`, {
+    const res = await fetch(`/api/teams/${teamId}/checkin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memberId: signModal.memberId, type, signature }),
     });
+    const record = await res.json();
     setSignModal(null);
+    await fetchStatus();
+    // Show toast
+    const actionLabel = type === "in" ? "签到" : "签退";
+    setToast({ message: `${signModal.name} 已${actionLabel}`, recordId: record.id });
+  }
+
+  async function handleUndo() {
+    if (!toast) return;
+    await fetch(`/api/records/${toast.recordId}`, { method: "DELETE" });
+    setToast(null);
     await fetchStatus();
   }
 
@@ -235,6 +265,20 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Confirm Sign-Out Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setConfirmModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-2">确认签退</h3>
+            <p className="text-sm text-gray-500 mb-4">{confirmModal.name} 确定要签退吗？</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 bg-gray-200 py-3 rounded-xl text-base font-medium">取消</button>
+              <button onClick={handleConfirmSignOut} className="flex-1 bg-red-500 text-white py-3 rounded-xl text-base font-medium">确定签退</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -268,6 +312,13 @@ export default function HomePage() {
             <SignatureViewer strokes={sigViewer.strokes} />
             <button onClick={() => setSigViewer(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">关闭</button>
           </div>
+        </div>
+      )}
+      {/* Undo Toast */}
+      {toast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-4 z-50">
+          <span className="text-sm">✅ {toast.message}</span>
+          <button onClick={handleUndo} className="text-sm text-yellow-400 font-medium underline">撤销</button>
         </div>
       )}
     </main>

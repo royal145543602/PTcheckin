@@ -28,6 +28,13 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, viewUrl }: SidebarProps) {
   const [newName, setNewName] = useState("");
+  const [pinModal, setPinModal] = useState<{ action: () => void } | null>(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinAuthed, setPinAuthed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const t = localStorage.getItem("pinAuthedUntil");
+    return t ? Number(t) > Date.now() : false;
+  });
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +47,27 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
     await navigator.clipboard.writeText(viewUrl);
     alert("链接已复制");
   }
+
+  function checkPin(action: () => void) {
+    if (pinAuthed) { action(); return; }
+    setPinModal({ action });
+    setPinInput("");
+  }
+
+  function handlePinSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const stored = localStorage.getItem("adminPin") || "0000";
+    if (pinInput === stored) {
+      const until = Date.now() + 30 * 60 * 1000; // 30 min
+      localStorage.setItem("pinAuthedUntil", String(until));
+      setPinAuthed(true);
+      setPinModal(null);
+      if (pinModal) pinModal.action();
+    } else {
+      alert("PIN 错误");
+    }
+  }
+
 
   return (
     <>
@@ -54,7 +82,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
             <label className="text-sm font-medium text-gray-700">团队</label>
             <select
               value={selectedTeamId || ""}
-              onChange={(e) => onSelectTeam(e.target.value)}
+              onChange={(e) => checkPin(() => onSelectTeam(e.target.value))}
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm bg-white"
             >
               <option value="" disabled>选择团队</option>
@@ -79,7 +107,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
                 {members.map((m) => (
                   <li key={m.id} className="flex justify-between items-center text-sm py-1">
                     <span>{m.name}</span>
-                    <button onClick={() => onDeleteMember(m.id)} className="text-red-400 text-xs">删除</button>
+                    <button onClick={() => checkPin(() => onDeleteMember(m.id))} className="text-red-400 text-xs">删除</button>
                   </li>
                 ))}
               </ul>
@@ -94,6 +122,26 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
           )}
         </div>
       </div>
+      {pinModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4" onClick={() => setPinModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-3">请输入管理密码</h3>
+            <form onSubmit={handlePinSubmit}>
+              <input
+                type="password"
+                className="w-full border rounded-xl px-4 py-3 text-lg mb-4 text-center"
+                placeholder="PIN"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value)}
+                autoFocus
+              />
+              <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl text-base font-medium">
+                确认
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
