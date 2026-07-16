@@ -272,9 +272,12 @@ export default function HomePage() {
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
         {teamId && (
-          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
-            {batchMode ? "退出批量" : "批量"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setAddModalOpen(true)} className="text-sm font-medium text-gray-500">＋</button>
+            <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
+              {batchMode ? "退出批量" : "批量"}
+            </button>
+          </div>
         )}
       </div>
 
