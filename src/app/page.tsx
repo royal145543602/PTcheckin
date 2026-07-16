@@ -440,6 +440,20 @@ export default function HomePage() {
         members={members}
         onAddMember={handleAddMember}
         onDeleteMember={handleDeleteMember}
+        onCreateTeam={async (name) => {
+          await fetch("/api/teams", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+          await fetchTeams();
+        }}
+        onRenameTeam={async (id, name) => {
+          await fetch(`/api/teams/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+          await fetchTeams();
+        }}
+        onDeleteTeam={async (id) => {
+          await fetch(`/api/teams/${id}`, { method: "DELETE" });
+          setTeamId(null);
+          await fetchTeams();
+          setMembers([]);
+        }}
         viewUrl={viewUrl}
       />
 

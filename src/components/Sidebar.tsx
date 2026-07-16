@@ -23,11 +23,17 @@ interface SidebarProps {
   members: Member[];
   onAddMember: (name: string) => Promise<void>;
   onDeleteMember: (id: string) => Promise<void>;
+  onCreateTeam: (name: string) => Promise<void>;
+  onRenameTeam: (id: string, name: string) => Promise<void>;
+  onDeleteTeam: (id: string) => Promise<void>;
   viewUrl: string;
 }
 
-export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, viewUrl }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, viewUrl }: SidebarProps) {
   const [newName, setNewName] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const [pinModal, setPinModal] = useState<{ action: () => void } | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [pinAuthed, setPinAuthed] = useState(() => {
@@ -41,6 +47,20 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
     if (!newName.trim()) return;
     await onAddMember(newName.trim());
     setNewName("");
+  }
+
+  async function handleCreateTeam(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+    await onCreateTeam(newTeamName.trim());
+    setNewTeamName("");
+  }
+
+  async function handleRenameSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!renameValue.trim() || !selectedTeamId) return;
+    await onRenameTeam(selectedTeamId, renameValue.trim());
+    setRenaming(false);
   }
 
   async function handleCopy() {
@@ -90,7 +110,44 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
+            {/* Create new team */}
+            <form onSubmit={handleCreateTeam} className="flex gap-2 mt-2">
+              <input
+                className="flex-1 border rounded-lg px-2 py-1 text-xs"
+                placeholder="新建团队"
+                value={newTeamName}
+                onChange={(e) => setNewTeamName(e.target.value)}
+              />
+              <button type="submit" className="bg-blue-600 text-white px-2 py-1 rounded-lg text-xs">创建</button>
+            </form>
           </div>
+
+          {/* Team actions: rename, delete */}
+          {selectedTeamId && (
+            <div className="space-y-2">
+              {renaming ? (
+                <form onSubmit={handleRenameSubmit} className="flex gap-2">
+                  <input
+                    className="flex-1 border rounded-lg px-2 py-1 text-sm"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    placeholder={teams.find(t => t.id === selectedTeamId)?.name}
+                    autoFocus
+                  />
+                  <button type="submit" className="text-xs bg-green-600 text-white px-2 py-1 rounded">保存</button>
+                  <button type="button" onClick={() => setRenaming(false)} className="text-xs text-gray-400">取消</button>
+                </form>
+              ) : (
+                <button onClick={() => { setRenameValue(teams.find(t => t.id === selectedTeamId)?.name || ""); setRenaming(true); }} className="text-xs text-blue-600 underline">
+                  重命名团队
+                </button>
+              )}
+              <br/>
+              <button onClick={() => checkPin(() => { if (confirm("删除团队及其所有成员和记录？")) onDeleteTeam(selectedTeamId); })} className="text-xs text-red-500 underline">
+                删除团队
+              </button>
+            </div>
+          )}
           {selectedTeamId && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">成员管理</h3>
