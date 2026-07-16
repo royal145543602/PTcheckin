@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import MemberCard from "@/components/MemberCard";
 import AddMemberModal from "@/components/AddMemberModal";
+import SignatureModal from "@/components/SignatureModal";
 import StatsBar from "@/components/StatsBar";
 
 interface MemberStatus {
@@ -21,6 +22,7 @@ export default function KioskPage() {
   const [data, setData] = useState<TeamStatus | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState("");
+  const [signModal, setSignModal] = useState<{ memberId: string; name: string; currentStatus: "in" | "out" | "none" } | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -39,14 +41,20 @@ export default function KioskPage() {
     return () => clearInterval(interval);
   }, [fetchStatus]);
 
-  async function handleCheckin(memberId: string, currentStatus: "in" | "out" | "none") {
-    const type = currentStatus === "in" ? "out" : "in";
+  function handleCardClick(memberId: string, name: string, currentStatus: "in" | "out" | "none") {
+    setSignModal({ memberId, name, currentStatus });
+  }
+
+  async function handleSignConfirm(signature: import("@/lib/types").SignatureData | null) {
+    if (!signModal) return;
+    const type = signModal.currentStatus === "in" ? "out" : "in";
     try {
       await fetch(`/api/teams/${teamId}/checkin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId, type }),
+        body: JSON.stringify({ memberId: signModal.memberId, type, signature }),
       });
+      setSignModal(null);
       await fetchStatus();
     } catch {
       setError("操作失败，请重试");
@@ -89,7 +97,7 @@ export default function KioskPage() {
             status={m.status}
             lastCheckIn={m.lastCheckIn}
             lastCheckOut={m.lastCheckOut}
-            onClick={() => handleCheckin(m.id, m.status)}
+            onClick={() => handleCardClick(m.id, m.name, m.status)}
           />
         ))}
         <button
@@ -104,6 +112,14 @@ export default function KioskPage() {
       <StatsBar {...data.stats} />
 
       <AddMemberModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onAdd={handleAddMember} />
+
+      <SignatureModal
+        isOpen={signModal !== null}
+        onClose={() => setSignModal(null)}
+        onConfirm={handleSignConfirm}
+        memberName={signModal?.name || ""}
+        actionType={signModal?.currentStatus === "in" ? "out" : "in"}
+      />
     </main>
   );
 }

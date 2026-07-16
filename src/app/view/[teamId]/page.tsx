@@ -3,10 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import StatsBar from "@/components/StatsBar";
+import SignatureViewer from "@/components/SignatureViewer";
 
 interface MemberStatus {
   id: string; name: string; status: "in" | "out" | "none";
   lastCheckIn: string | null; lastCheckOut: string | null;
+  lastSignatureIn?: import("@/lib/types").SignatureData;
+  lastSignatureOut?: import("@/lib/types").SignatureData;
 }
 interface TeamStatus {
   team: { id: string; name: string; createdAt: string };
@@ -18,6 +21,7 @@ export default function ViewPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const [data, setData] = useState<TeamStatus | null>(null);
   const [lastUpdate, setLastUpdate] = useState("");
+  const [sigViewer, setSigViewer] = useState<{ name: string; strokes: import("@/lib/types").SignatureData; label: string } | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -68,13 +72,37 @@ export default function ViewPage() {
                 <div className={`w-3 h-3 rounded-full ${badge.color}`} />
                 <span className="text-lg font-medium">{m.name}</span>
               </div>
-              <span className="text-sm text-gray-500">{badge.text}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{badge.text}</span>
+                {m.lastSignatureIn && (
+                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureIn!, label: "签到签名" })} className="text-xs text-blue-600 underline">
+                    查看签名
+                  </button>
+                )}
+                {m.lastSignatureOut && (
+                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureOut!, label: "签退签名" })} className="text-xs text-blue-600 underline">
+                    查看签退
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
       <StatsBar {...data.stats} />
+
+      {sigViewer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSigViewer(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-3">{sigViewer.name} - {sigViewer.label}</h3>
+            <SignatureViewer strokes={sigViewer.strokes} />
+            <button onClick={() => setSigViewer(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">
+              关闭
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
