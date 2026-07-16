@@ -39,11 +39,17 @@ export default function HomePage() {
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [undoMenu, setUndoMenu] = useState<{ memberId: string; name: string; x: number; y: number } | null>(null);
-  // Undo stack: newest first, persisted to localStorage
+  // Undo stack: newest first, persisted to localStorage, cleared daily
   type UndoEntry = { recordIds: string[]; label: string };
   const [undoStack, setUndoStack] = useState<UndoEntry[]>(() => {
     if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem("undoStack") || "[]"); } catch { return []; }
+    try {
+      const saved = JSON.parse(localStorage.getItem("undoStack") || "[]");
+      const savedDate = localStorage.getItem("undoStackDate");
+      const bjToday = new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString().split("T")[0];
+      if (savedDate !== bjToday) return []; // new day, clear stack
+      return saved;
+    } catch { return []; }
   });
 
   const [historyDays, setHistoryDays] = useState<any[]>([]);
@@ -202,6 +208,8 @@ export default function HomePage() {
     setUndoStack(prev => {
       const next = [entry, ...prev].slice(0, 20);
       localStorage.setItem("undoStack", JSON.stringify(next));
+      const bjToday = new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString().split("T")[0];
+      localStorage.setItem("undoStackDate", bjToday);
       return next;
     });
   }
@@ -233,6 +241,8 @@ export default function HomePage() {
     setUndoStack(prev => {
       const next = [entry, ...prev].slice(0, 20);
       localStorage.setItem("undoStack", JSON.stringify(next));
+      const bjToday = new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString().split("T")[0];
+      localStorage.setItem("undoStackDate", bjToday);
       return next;
     });
     await fetchStatus();
@@ -247,6 +257,7 @@ export default function HomePage() {
     setUndoStack(prev => {
       const next = prev.filter((_, i) => i !== index);
       localStorage.setItem("undoStack", JSON.stringify(next));
+      if (next.length === 0) localStorage.removeItem("undoStackDate");
       return next;
     });
     await fetchStatus();

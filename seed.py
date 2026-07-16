@@ -43,19 +43,7 @@ for name in members:
     conn.execute("INSERT INTO members (id, team_id, name, is_preset) VALUES (?, ?, ?, 1)",
                  (mid, team_id, name))
 
-# Check in: 小明, 小红, 小强
-# Check out: 小强 (so 小强 = gone)
-for i, mid in enumerate(member_ids):
-    t = datetime.now(timezone.utc).isoformat()
-    if i in [0, 1]:  # 小明, 小红 → checked in
-        conn.execute("INSERT INTO records (id, member_id, team_id, type, time) VALUES (?, ?, ?, 'in', ?)",
-                     (str(uuid.uuid4()), mid, team_id, t))
-    if i == 4:  # 小强 → checked in then out
-        conn.execute("INSERT INTO records (id, member_id, team_id, type, time) VALUES (?, ?, ?, 'in', ?)",
-                     (str(uuid.uuid4()), mid, team_id, t))
-        conn.execute("INSERT INTO records (id, member_id, team_id, type, time) VALUES (?, ?, ?, 'out', ?)",
-                     (str(uuid.uuid4()), mid, team_id, t))
-
+# No pre-existing records - each day starts fresh with everyone grey
 conn.commit()
 
 # Verify (use repr to avoid terminal encoding issues)
