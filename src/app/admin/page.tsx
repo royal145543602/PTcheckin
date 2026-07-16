@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import TeamSelector from "@/components/TeamSelector";
+import HistoryDayList from "@/components/HistoryDayList";
+import SignatureViewer from "@/components/SignatureViewer";
+import type { SignatureData } from "@/lib/types";
 
 interface Team { id: string; name: string; createdAt: string; }
 interface Member { id: string; teamId: string; name: string; isPreset: boolean; }
@@ -14,6 +17,13 @@ export default function AdminPage() {
   const [newMemberName, setNewMemberName] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [historyDays, setHistoryDays] = useState<any[]>([]);
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date(Date.now() - 7 * 86400000);
+    return d.toISOString().split("T")[0];
+  });
+  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split("T")[0]);
+  const [sigViewer, setSigViewer] = useState<{ name: string; strokes: SignatureData; label: string } | null>(null);
 
   const fetchTeams = useCallback(async () => {
     const res = await fetch("/api/teams");
@@ -33,6 +43,15 @@ export default function AdminPage() {
 
   useEffect(() => { fetchTeams(); }, []);
   useEffect(() => { fetchMembers(); }, [selectedTeamId]);
+
+  const fetchHistory = useCallback(async () => {
+    if (!selectedTeamId) return;
+    const res = await fetch(`/api/teams/${selectedTeamId}/records?from=${dateFrom}&to=${dateTo}`);
+    const data = await res.json();
+    setHistoryDays(data.days || []);
+  }, [selectedTeamId, dateFrom, dateTo]);
+
+  useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
   async function createTeam(e: React.FormEvent) {
     e.preventDefault();
@@ -140,6 +159,30 @@ export default function AdminPage() {
             ))}
           </ul>
           {members.length === 0 && <p className="text-gray-400 text-sm">还没有成员</p>}
+        </div>
+      )}
+
+      {selectedTeamId && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-3">历史记录</h2>
+          <HistoryDayList
+            days={historyDays}
+            from={dateFrom}
+            to={dateTo}
+            onFromChange={setDateFrom}
+            onToChange={setDateTo}
+            onViewSignature={(name, strokes, label) => setSigViewer({ name, strokes, label })}
+          />
+        </div>
+      )}
+
+      {sigViewer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSigViewer(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-3">{sigViewer.name} - {sigViewer.label}</h3>
+            <SignatureViewer strokes={sigViewer.strokes} />
+            <button onClick={() => setSigViewer(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">关闭</button>
+          </div>
         </div>
       )}
 

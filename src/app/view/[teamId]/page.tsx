@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import StatsBar from "@/components/StatsBar";
 import SignatureViewer from "@/components/SignatureViewer";
+import HistoryDayList from "@/components/HistoryDayList";
 
 interface MemberStatus {
   id: string; name: string; status: "in" | "out" | "none";
@@ -21,6 +22,13 @@ export default function ViewPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const [data, setData] = useState<TeamStatus | null>(null);
   const [lastUpdate, setLastUpdate] = useState("");
+  const [historyModal, setHistoryModal] = useState<{ memberId: string; name: string } | null>(null);
+  const [memberHistory, setMemberHistory] = useState<any[]>([]);
+  const [hFrom, setHFrom] = useState(() => {
+    const d = new Date(Date.now() - 7 * 86400000);
+    return d.toISOString().split("T")[0];
+  });
+  const [hTo, setHTo] = useState(() => new Date().toISOString().split("T")[0]);
   const [sigViewer, setSigViewer] = useState<{ name: string; strokes: import("@/lib/types").SignatureData; label: string } | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -37,6 +45,15 @@ export default function ViewPage() {
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
+
+  const fetchMemberHistory = useCallback(async () => {
+    if (!historyModal) return;
+    const res = await fetch(`/api/members/${historyModal.memberId}/records?from=${hFrom}&to=${hTo}`);
+    const data = await res.json();
+    setMemberHistory(data.days || []);
+  }, [historyModal, hFrom, hTo]);
+
+  useEffect(() => { fetchMemberHistory(); }, [fetchMemberHistory]);
 
   if (!data) {
     return <main className="flex items-center justify-center min-h-screen"><p className="text-gray-400">加载中...</p></main>;
@@ -84,6 +101,9 @@ export default function ViewPage() {
                     查看签退
                   </button>
                 )}
+                <button onClick={() => setHistoryModal({ memberId: m.id, name: m.name })} className="text-xs text-blue-600 underline">
+                  查看历史
+                </button>
               </div>
             </div>
           );
@@ -100,6 +120,24 @@ export default function ViewPage() {
             <button onClick={() => setSigViewer(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">
               关闭
             </button>
+          </div>
+        </div>
+      )}
+
+      {historyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setHistoryModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-3">{historyModal.name} - 签到历史</h3>
+            <HistoryDayList
+              days={memberHistory}
+              from={hFrom}
+              to={hTo}
+              onFromChange={setHFrom}
+              onToChange={setHTo}
+              onViewSignature={(name, strokes, label) => setSigViewer({ name, strokes, label })}
+              showMemberName={false}
+            />
+            <button onClick={() => setHistoryModal(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">关闭</button>
           </div>
         </div>
       )}
