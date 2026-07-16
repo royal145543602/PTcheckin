@@ -49,8 +49,8 @@ for name in ["小华", "小花", "小林"]:
 
 conn.commit()
 
-rows = conn.execute("SELECT t.name, COUNT(m.id) FROM teams t LEFT JOIN members m ON m.team_id = t.id GROUP BY t.id").fetchall()
+rows = conn.execute("SELECT hex(t.name), COUNT(m.id) FROM teams t LEFT JOIN members m ON m.team_id = t.id GROUP BY t.id").fetchall()
 for r in rows:
-    print(f"  {r[0]}: {r[1]} members")
+    print(f"  hex={r[0]} members={r[1]}")
 conn.close()
 print("SEED_OK")

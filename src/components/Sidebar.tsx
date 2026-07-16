@@ -102,7 +102,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
             <label className="text-sm font-medium text-gray-700">团队</label>
             <select
               value={selectedTeamId || ""}
-              onChange={(e) => checkPin(() => onSelectTeam(e.target.value))}
+              onChange={(e) => onSelectTeam(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm bg-white"
             >
               <option value="" disabled>选择团队</option>
