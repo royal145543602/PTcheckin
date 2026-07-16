@@ -36,11 +36,11 @@ export default function HomePage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [signModal, setSignModal] = useState<{ memberId: string; name: string; currentStatus: "in" | "out" | "none" } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ memberId: string; name: string } | null>(null);
-  const [toast, setToast] = useState<{ message: string; recordId: string } | null>(null);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [undoMenu, setUndoMenu] = useState<{ memberId: string; name: string; x: number; y: number } | null>(null);
-  const [lastBatch, setLastBatch] = useState<string[]>([]); // record IDs for batch undo
+  // Unified undo state: records last action (single or batch) until undone or replaced
+  const [lastAction, setLastAction] = useState<{ recordIds: string[]; label: string } | null>(null);
 
   const [historyDays, setHistoryDays] = useState<any[]>([]);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -63,12 +63,6 @@ export default function HomePage() {
     const timer = setInterval(tick, 30000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 5000);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   // Load teams
   const fetchTeams = useCallback(async () => {
@@ -177,7 +171,6 @@ export default function HomePage() {
     const lastOut = todayRecords.find((r: any) => r.type === "out" && r.memberName === status?.members.find(m => m.id === memberId)?.name);
     if (lastOut) {
       await fetch(`/api/records/${lastOut.id}`, { method: "DELETE" });
-      setToast({ message: `已撤销签退`, recordId: lastOut.id });
     }
     setUndoMenu(null);
     await fetchStatus();
@@ -200,9 +193,8 @@ export default function HomePage() {
     const record = await res.json();
     setSignModal(null);
     await fetchStatus();
-    // Show toast
     const actionLabel = type === "in" ? "签到" : "签退";
-    setToast({ message: `${signModal.name} 已${actionLabel}`, recordId: record.id });
+    setLastAction({ recordIds: [record.id], label: `${signModal.name} ${actionLabel}` });
   }
 
   async function handleBatch(action: "in" | "out") {
@@ -227,33 +219,18 @@ export default function HomePage() {
       const record = await res.json();
       records.push(record.id);
     }
-    setLastBatch(records);
     const label = action === "in" ? "签到" : "签退";
-    setToast({ message: `批量${label} ${validIds.length} 人`, recordId: records.join(",") });
-    await fetchStatus();
-  }
-
-  async function handleBatchUndo() {
-    if (lastBatch.length === 0) return;
-    for (const id of lastBatch) {
-      await fetch(`/api/records/${id}`, { method: "DELETE" });
-    }
-    setLastBatch([]);
-    setToast(null);
+    setLastAction({ recordIds: records, label: `批量${label} ${validIds.length} 人` });
     await fetchStatus();
   }
 
   async function handleUndo() {
-    if (!toast) return;
-    if (toast.recordId.includes(",")) {
-      // Batch undo
-      await handleBatchUndo();
-    } else {
-      // Single undo
-      await fetch(`/api/records/${toast.recordId}`, { method: "DELETE" });
-      setToast(null);
-      await fetchStatus();
+    if (!lastAction) return;
+    for (const id of lastAction.recordIds) {
+      await fetch(`/api/records/${id}`, { method: "DELETE" });
     }
+    setLastAction(null);
+    await fetchStatus();
   }
 
   const viewUrl = teamId ? `${window.location.origin}/view/${teamId}` : "";
@@ -265,7 +242,7 @@ export default function HomePage() {
         <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
         <span className="text-sm font-medium">{timeStr}</span>
         {teamId && (
-          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); setLastBatch([]); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
+          <button onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }} className={`text-sm font-medium ${batchMode ? "text-blue-600" : "text-gray-500"}`}>
             {batchMode ? "退出批量" : "批量"}
           </button>
         )}
@@ -338,6 +315,12 @@ export default function HomePage() {
             </button>
           </div>
           <StatsBar {...status.stats} />
+          {lastAction && (
+            <div className="bg-yellow-50 border-t border-yellow-200 px-4 py-2 flex items-center justify-between">
+              <span className="text-sm text-yellow-800">上次操作：{lastAction.label}</span>
+              <button onClick={handleUndo} className="text-sm text-yellow-700 underline font-medium">撤销</button>
+            </div>
+          )}
           {batchMode && (
             <div className="bg-white border-t px-4 py-3 space-y-2">
               <div className="flex gap-2 justify-center">
@@ -355,13 +338,10 @@ export default function HomePage() {
                 <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
                   全部签退
                 </button>
-                <button onClick={handleBatchUndo} disabled={lastBatch.length === 0} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-30">
+                <button onClick={handleUndo} disabled={!lastAction} className="bg-yellow-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-30">
                   撤回上一步
                 </button>
               </div>
-              {lastBatch.length > 0 && (
-                <p className="text-center text-xs text-gray-500">上次批量操作了 {lastBatch.length} 人</p>
-              )}
             </div>
           )}
         </div>
@@ -442,13 +422,6 @@ export default function HomePage() {
             <SignatureViewer strokes={sigViewer.strokes} />
             <button onClick={() => setSigViewer(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">关闭</button>
           </div>
-        </div>
-      )}
-      {/* Undo Toast */}
-      {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-4 z-[100]">
-          <span className="text-sm">✅ {toast.message}</span>
-          <button onClick={handleUndo} className="text-sm text-yellow-400 font-medium underline">撤销</button>
         </div>
       )}
     </main>
