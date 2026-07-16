@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const membersWithStatus: MemberStatus[] = members.map((m: any) => {
     const lastRecord = db.prepare(
-      "SELECT type, time FROM records WHERE member_id = ? ORDER BY time DESC, rowid DESC LIMIT 1"
+      "SELECT type, time, signature FROM records WHERE member_id = ? ORDER BY time DESC, rowid DESC LIMIT 1"
     ).get(m.id) as any;
 
     if (!lastRecord) {
@@ -23,15 +23,20 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     const allRecords = db.prepare(
-      "SELECT type, time FROM records WHERE member_id = ? ORDER BY time DESC"
+      "SELECT type, time, signature FROM records WHERE member_id = ? ORDER BY time DESC, rowid DESC"
     ).all(m.id) as any[];
 
-    const lastCheckIn = allRecords.find((r: any) => r.type === "in")?.time || null;
-    const lastCheckOut = allRecords.find((r: any) => r.type === "out")?.time || null;
+    const lastIn = allRecords.find((r: any) => r.type === "in");
+    const lastOut = allRecords.find((r: any) => r.type === "out");
+
+    const lastCheckIn = lastIn?.time || null;
+    const lastCheckOut = lastOut?.time || null;
+    const lastSignatureIn = lastIn?.signature ? JSON.parse(lastIn.signature) : null;
+    const lastSignatureOut = lastOut?.signature ? JSON.parse(lastOut.signature) : null;
 
     const status = lastRecord.type === "in" ? "in" : "out";
 
-    return { id: m.id, name: m.name, status, lastCheckIn, lastCheckOut, lastSignatureIn: null, lastSignatureOut: null };
+    return { id: m.id, name: m.name, status, lastCheckIn, lastCheckOut, lastSignatureIn, lastSignatureOut };
   });
 
   const present = membersWithStatus.filter((m) => m.status === "in").length;

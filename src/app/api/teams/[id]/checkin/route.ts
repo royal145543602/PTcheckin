@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: teamId } = await params;
-  const { memberId, type } = await request.json();
+  const { memberId, type, signature } = await request.json();
 
   if (!memberId || !type || !["in", "out"].includes(type)) {
     return NextResponse.json({ error: "参数无效" }, { status: 400 });
@@ -16,12 +16,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const recordId = uuidv4();
   const time = new Date().toISOString();
-  db.prepare("INSERT INTO records (id, member_id, team_id, type, time) VALUES (?, ?, ?, ?, ?)").run(
-    recordId, memberId, teamId, type, time
-  );
+  const sigStr = signature ? JSON.stringify(signature) : null;
+
+  db.prepare(
+    "INSERT INTO records (id, member_id, team_id, type, time, signature) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(recordId, memberId, teamId, type, time, sigStr);
 
   const record = db.prepare(
-    "SELECT id, member_id as memberId, team_id as teamId, type, time FROM records WHERE id = ?"
+    "SELECT id, member_id as memberId, team_id as teamId, type, time, signature FROM records WHERE id = ?"
   ).get(recordId);
   return NextResponse.json(record, { status: 201 });
 }
