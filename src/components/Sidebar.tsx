@@ -171,7 +171,6 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
               </div>
             </div>
           )}
-        </div>
 
           {/* ── Language ── */}
           <div className="sidebar-item px-6">
