@@ -1,6 +1,6 @@
 const en = {
   // Tabs
-  checkIn: "Check In",
+  checkIn: "Sign In",
   history: "History",
   // Top bar
   undo: "Undo",
@@ -8,15 +8,15 @@ const en = {
   done: "Done",
   // Batch controls
   selectAll: "Select All",
-  deselect: "Deselect",
-  batchCheckIn: "Check In\nAll",
-  batchSignOut: "Sign Out\nAll",
+  deselect: "Clear",
+  batchCheckIn: "All\nSign In",
+  batchSignOut: "All\nSign Out",
   // Empty state
   createFirstTeam: "Create your first team",
   teamNamePlaceholder: "Enter team name",
   create: "Create",
   // Confirm sign-out
-  confirmSignOut: "Confirm Sign Out",
+  confirmSignOut: "Sign Out",
   confirmSignOutMsg: "Sign out {name}?",
   cancel: "Cancel",
   confirmSignOutBtn: "Sign Out",
@@ -91,14 +91,14 @@ const en = {
   undoStroke: "Undo",
   clearAll: "Clear",
   skipSignature: "Skip",
-  confirmAction: "Confirm {action}",
+  confirmAction: "{action}",
   // Add member
   addMemberTitle: "Add Member",
   namePlaceholder: "Enter name",
   add: "Add",
   // History
-  checkInLabel: "Check In",
-  signOutLabel: "Sign Out",
+  checkInLabel: "Signed In",
+  signOutLabel: "Signed Out",
   viewSignature: "View Signature",
   to: "to",
   noRecords: "No records",

@@ -65,7 +65,7 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
 
   if (!isOpen) return null;
 
-  const actionLabel = actionType === "in" ? t.checkInLabel : t.signOutLabel;
+  const actionLabel = actionType === "in" ? t.checkIn : t.signOutLabel;
   const actionColor = actionType === "in" ? "var(--green)" : "#e83030";
 
   return (
