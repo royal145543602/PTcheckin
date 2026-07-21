@@ -99,6 +99,7 @@ const zh: Translations = {
   namePlaceholder: "輸入名字",
   add: "新增",
   // History
+  signOut: "簽退",
   checkInLabel: "簽到",
   signOutLabel: "簽退",
   viewSignature: "查看簽名",

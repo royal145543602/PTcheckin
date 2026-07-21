@@ -97,6 +97,7 @@ const en = {
   namePlaceholder: "Enter name",
   add: "Add",
   // History
+  signOut: "Sign Out",
   checkInLabel: "Signed In",
   signOutLabel: "Signed Out",
   viewSignature: "View Signature",
