@@ -1,4 +1,5 @@
 node_modules/
 .next/
-checkin.db
 *.db-journal
+*.db-shm
+*.db-wal
