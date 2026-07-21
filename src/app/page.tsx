@@ -336,9 +336,9 @@ export default function HomePage() {
   const teamName = status?.team.name || teams.find(t => t.id === teamId)?.name || "";
 
   return (
-    <main className="min-h-screen flex flex-col relative" style={{ background: "var(--bg)", zIndex: 1 }}>
+    <main className="min-h-screen flex flex-col relative max-w-full overflow-x-hidden" style={{ background: "var(--bg)", zIndex: 1 }}>
       {/* ── Top Bar ── */}
-      <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-4" style={{ background: "#0a1a0f", color: "#fff" }}>
+      <div className="sticky top-0 z-20 flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4" style={{ background: "#0a1a0f", color: "#fff" }}>
         <Hamburger open={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)} />
         <div className="text-center flex-1 mx-4">
           {teamName && (
@@ -404,7 +404,7 @@ export default function HomePage() {
         <div ref={tabContentRef} style={{ display: teamId && tab === "checkin" ? "flex" : "none", flex: 1, flexDirection: "column" }}>
           {status && (
             <>
-              <div ref={gridRef} className="flex-1 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 content-start">
+              <div ref={gridRef} className="flex-1 p-2 sm:p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 content-start">
                 {status.members.map((m) => (
                   <div key={m.id} className="member-card">
                     <MemberCard
