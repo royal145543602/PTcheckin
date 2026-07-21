@@ -2,6 +2,7 @@
 
 import { useRef, CSSProperties } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
+import { useT } from "@/i18n";
 
 interface MemberCardProps {
   name: string;
@@ -22,6 +23,7 @@ const OUT_BG = "rgba(220,40,40,0.10)";
 const OUT_BORDER = "rgba(220,40,40,0.30)";
 
 export default function MemberCard({ name, status, lastCheckIn, lastCheckOut, onClick, showCheckbox, checked }: MemberCardProps) {
+  const { t } = useT();
   const cardRef = useRef<HTMLButtonElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
   const prevStatusRef = useRef(status);
@@ -116,7 +118,7 @@ export default function MemberCard({ name, status, lastCheckIn, lastCheckOut, on
       <div className="flex items-center gap-1.5 mt-2 relative z-[1]">
         <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />
         <span className="text-xs" style={{ color: timeLabel }}>
-          {status === "none" && "点击签到"}
+          {status === "none" && t.tapToSign}
           {isIn && lastCheckIn && formatTime(lastCheckIn)}
           {isOut && lastCheckOut && formatTime(lastCheckOut)}
         </span>

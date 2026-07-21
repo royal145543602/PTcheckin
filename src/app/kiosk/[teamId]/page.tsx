@@ -11,6 +11,7 @@ import Sidebar from "@/components/Sidebar";
 import AnimatedModal from "@/components/AnimatedModal";
 import { IconMenu } from "@/components/icons";
 import type { SignatureData } from "@/lib/types";
+import { useT } from "@/i18n";
 
 interface Team { id: string; name: string; createdAt: string; }
 interface Member { id: string; teamId: string; name: string; isPreset: boolean; }
@@ -27,6 +28,7 @@ interface TeamStatus {
 
 export default function KioskPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { t } = useT();
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
 
@@ -60,8 +62,13 @@ export default function KioskPage() {
     const tick = () => {
       const now = new Date();
       const bj = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
-      setTimeStr(`${bj.getFullYear()}年${bj.getMonth() + 1}月${bj.getDate()}日 周${weekdays[bj.getDay()]} ${String(bj.getHours()).padStart(2, "0")}:${String(bj.getMinutes()).padStart(2, "0")}`);
+      const time = `${String(bj.getHours()).padStart(2, "0")}:${String(bj.getMinutes()).padStart(2, "0")}`;
+      setTimeStr(t.timeFormat
+        .replace("{year}", String(bj.getFullYear()))
+        .replace("{month}", String(bj.getMonth() + 1))
+        .replace("{day}", String(bj.getDate()))
+        .replace("{weekday}", t.weekdays[bj.getDay()])
+        .replace("{time}", time));
     };
     tick();
     const timer = setInterval(tick, 30000);
@@ -136,7 +143,7 @@ export default function KioskPage() {
     setSignModal(null);
     await fetchStatus();
     // Track undo
-    const actionLabel = type === "in" ? "签到" : "签退";
+    const actionLabel = type === "in" ? t.checkInLabel : t.signOutLabel;
     undoStackRef.current = [{ recordIds: [record.id], label: `${signModal.name} ${actionLabel}` }, ...undoStackRef.current].slice(0, 20);
     setUndoCount(undoStackRef.current.length);
   }
@@ -155,7 +162,7 @@ export default function KioskPage() {
   if (!status) {
     return (
       <main className="flex items-center justify-center min-h-screen relative z-10" style={{ background: "var(--bg)" }}>
-        <p className="text-[var(--muted)] text-lg">加载中...</p>
+        <p className="text-[var(--muted)] text-lg">{t.loading}</p>
       </main>
     );
   }
@@ -175,7 +182,7 @@ export default function KioskPage() {
 
       {/* Sub header — tap instruction */}
       <div className="text-center py-2 px-4 border-b border-[var(--border)] bg-[var(--green-dim)]">
-        <span className="text-xs text-[var(--green)]">点击卡片签到 / 签退</span>
+        <span className="text-xs text-[var(--green)]">{t.tapToCheckIn}</span>
       </div>
 
       {/* Cards grid */}
@@ -200,12 +207,12 @@ export default function KioskPage() {
         <div className="text-center">
           <p className="text-3xl font-bold mb-2 text-[var(--text)]">{tapTarget?.name}</p>
           <p className="text-sm text-[var(--muted)] mb-5">
-            {tapTarget?.currentStatus === "in" ? "当前在场，确认签退？" : tapTarget?.currentStatus === "out" ? "已签退，重新签到？" : "点击确认签到"}
+            {tapTarget?.currentStatus === "in" ? t.currentlyIn : tapTarget?.currentStatus === "out" ? t.alreadyOut : t.tapToConfirm}
           </p>
           <div className="flex gap-3">
-            <button onClick={() => setTapTarget(null)} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">取消</button>
+            <button onClick={() => setTapTarget(null)} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">{t.cancel}</button>
             <button onClick={handleConfirmTap} className={`flex-1 py-3 rounded-xl text-base font-bold text-white hover:brightness-110 transition-all ${tapTarget?.currentStatus === "in" ? "bg-[#e83030]" : "bg-[var(--green)]"}`}>
-              {tapTarget?.currentStatus === "in" ? "签退" : "签到"}
+              {tapTarget?.currentStatus === "in" ? t.signOutLabel : t.checkInLabel}
             </button>
           </div>
         </div>

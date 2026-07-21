@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { gsap } from "@/lib/gsap";
 import { IconCheck } from "@/components/icons";
+import { useT } from "@/i18n";
 
 interface DropdownProps {
   value: string;
@@ -12,7 +13,8 @@ interface DropdownProps {
   placeholder?: string;
 }
 
-export default function Dropdown({ value, options, onChange, placeholder = "请选择" }: DropdownProps) {
+export default function Dropdown({ value, options, onChange, placeholder }: DropdownProps) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -82,7 +84,7 @@ export default function Dropdown({ value, options, onChange, placeholder = "请�
           color: selected ? "var(--text)" : "var(--dim)",
         }}
       >
-        <span>{selected ? selected.label : placeholder}</span>
+        <span>{selected ? selected.label : (placeholder ?? t.pleaseSelect)}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.25s ease" }}>
           <path d="M6 8L1 3h10z" fill="var(--green)" />
         </svg>

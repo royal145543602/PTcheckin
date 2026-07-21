@@ -9,6 +9,7 @@ import HistoryDayList from "@/components/HistoryDayList";
 import AnimatedModal from "@/components/AnimatedModal";
 import { IconRefresh, IconSignature, IconHistory } from "@/components/icons";
 import type { SignatureData } from "@/lib/types";
+import { useT } from "@/i18n";
 
 interface MemberStatus {
   id: string; name: string; status: "in" | "out" | "none";
@@ -24,6 +25,7 @@ interface TeamStatus {
 
 export default function ViewPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { t } = useT();
   const [data, setData] = useState<TeamStatus | null>(null);
   const [lastUpdate, setLastUpdate] = useState("");
   const [historyModal, setHistoryModal] = useState<{ memberId: string; name: string } | null>(null);
@@ -72,7 +74,7 @@ export default function ViewPage() {
   if (!data) {
     return (
       <main className="flex items-center justify-center min-h-screen relative z-10" style={{ background: "var(--bg)" }}>
-        <p className="text-[var(--muted)] text-lg">加载中...</p>
+        <p className="text-[var(--muted)] text-lg">{t.loading}</p>
       </main>
     );
   }
@@ -84,9 +86,9 @@ export default function ViewPage() {
   };
 
   const statusBadge = (status: "in" | "out" | "none", checkIn: string | null, checkOut: string | null) => {
-    if (status === "in") return { dot: "bg-[var(--green)] shadow-[0_0_8px_rgba(0,128,51,0.4)]", text: `签到 ${formatTime(checkIn)}`, textColor: "text-[var(--green)]" };
-    if (status === "out") return { dot: "bg-orange-400", text: `已走 ${formatTime(checkOut)}`, textColor: "text-orange-400" };
-    return { dot: "bg-[var(--dim)]", text: "未到", textColor: "text-[var(--dim)]" };
+    if (status === "in") return { dot: "bg-[var(--green)] shadow-[0_0_8px_rgba(0,128,51,0.4)]", text: `${t.checkInLabel} ${formatTime(checkIn)}`, textColor: "text-[var(--green)]" };
+    if (status === "out") return { dot: "bg-orange-400", text: `${t.gone} ${formatTime(checkOut)}`, textColor: "text-orange-400" };
+    return { dot: "bg-[var(--dim)]", text: t.absent, textColor: "text-[var(--dim)]" };
   };
 
   return (
@@ -96,11 +98,11 @@ export default function ViewPage() {
         <h1 className="text-xl sm:text-2xl font-bold font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>
           {data.team.name}
         </h1>
-        <button onClick={fetchStatus} className="text-sm text-[var(--green)] hover:underline font-medium flex items-center gap-1"><IconRefresh size={14} /> 刷新</button>
+        <button onClick={fetchStatus} className="text-sm text-[var(--green)] hover:underline font-medium flex items-center gap-1"><IconRefresh size={14} /> {t.refresh}</button>
       </div>
 
       {lastUpdate && (
-        <div className="text-center text-xs text-[var(--dim)] py-1.5">最后更新: {lastUpdate}</div>
+        <div className="text-center text-xs text-[var(--dim)] py-1.5">{t.lastUpdate.replace("{time}", lastUpdate)}</div>
       )}
 
       {/* Member list */}
@@ -116,17 +118,17 @@ export default function ViewPage() {
               <div className="flex items-center gap-2">
                 <span className={`text-sm ${badge.textColor}`}>{badge.text}</span>
                 {m.lastSignatureIn && (
-                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureIn!, label: "签到签名" })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
-                    <IconSignature size={12} /> 签名
+                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureIn!, label: `${t.checkInLabel}${t.signature}` })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
+                    <IconSignature size={12} /> {t.signature}
                   </button>
                 )}
                 {m.lastSignatureOut && (
-                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureOut!, label: "签退签名" })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
-                    <IconSignature size={12} /> 签退
+                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureOut!, label: `${t.signOutLabel}${t.signature}` })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
+                    <IconSignature size={12} /> {t.signOutLabel}
                   </button>
                 )}
                 <button onClick={() => setHistoryModal({ memberId: m.id, name: m.name })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
-                  <IconHistory size={12} /> 历史
+                  <IconHistory size={12} /> {t.historyShort}
                 </button>
               </div>
             </div>
@@ -140,12 +142,12 @@ export default function ViewPage() {
       <AnimatedModal show={sigViewer !== null} onClose={() => setSigViewer(null)}>
         <h3 className="text-lg font-bold mb-3 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{sigViewer?.name} - {sigViewer?.label}</h3>
         <SignatureViewer strokes={sigViewer?.strokes || []} />
-        <button onClick={() => setSigViewer(null)} className="mt-4 w-full py-2 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">关闭</button>
+        <button onClick={() => setSigViewer(null)} className="mt-4 w-full py-2 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">{t.close}</button>
       </AnimatedModal>
 
       {/* History modal */}
       <AnimatedModal show={historyModal !== null} onClose={() => setHistoryModal(null)}>
-        <h3 className="text-lg font-bold mb-3 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{historyModal?.name} - 签到历史</h3>
+        <h3 className="text-lg font-bold mb-3 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{historyModal?.name} - {t.checkInHistory}</h3>
         <div className="max-h-[60vh] overflow-y-auto">
           <HistoryDayList
             days={memberHistory}
@@ -157,7 +159,7 @@ export default function ViewPage() {
             showMemberName={false}
           />
         </div>
-        <button onClick={() => setHistoryModal(null)} className="mt-4 w-full py-2 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">关闭</button>
+        <button onClick={() => setHistoryModal(null)} className="mt-4 w-full py-2 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">{t.close}</button>
       </AnimatedModal>
     </main>
   );

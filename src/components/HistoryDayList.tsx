@@ -3,6 +3,8 @@
 import { useState, useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 import type { SignatureData } from "@/lib/types";
+import { useT } from "@/i18n";
+import type { Translations } from "@/i18n/en";
 
 interface HistoryRecord {
   id: string;
@@ -27,10 +29,15 @@ interface HistoryDayListProps {
   showMemberName?: boolean;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, t: Translations): string {
   const d = new Date(dateStr);
-  const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
-  return `${d.getMonth() + 1}月${d.getDate()}日 (周${weekdays[d.getDay()]})`;
+  const text = t.timeFormat
+    .replace("{year}", String(d.getFullYear()))
+    .replace("{month}", String(d.getMonth() + 1))
+    .replace("{day}", String(d.getDate()))
+    .replace("{weekday}", t.weekdays[d.getDay()])
+    .replace(/\s*\{time\}/, "");
+  return text.trim();
 }
 
 function formatTime(iso: string): string {
@@ -44,6 +51,7 @@ function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
   onViewSignature?: (name: string, sig: SignatureData, label: string) => void;
   showMemberName: boolean;
 }) {
+  const { t } = useT();
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -68,11 +76,11 @@ function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/[0.02] transition-colors text-left"
       >
         <span className="font-medium text-sm text-[var(--text)]/85 font-display tracking-wide" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>
-          {formatDate(day.date)}
+          {formatDate(day.date, t)}
         </span>
         <span className="text-xs text-[var(--muted)] flex items-center gap-2">
-          <span className="text-[var(--green)]">签到{inCount}</span>
-          <span className="text-red-400">签退{outCount}</span>
+          <span className="text-[var(--green)]">{t.checkInLabel}{inCount}</span>
+          <span className="text-red-400">{t.signOutLabel}{outCount}</span>
           <span className="ml-1 text-[var(--dim)] transition-transform duration-300" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0)" }}>
             ▼
           </span>
@@ -85,17 +93,17 @@ function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
             <div key={r.id} className="flex items-center justify-between py-1.5 text-sm">
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.type === "in" ? "bg-[rgba(0,128,51,0.1)] text-[var(--green)]" : "bg-[rgba(232,48,48,0.1)] text-red-400"}`}>
-                  {r.type === "in" ? "签到" : "签退"}
+                  {r.type === "in" ? t.checkInLabel : t.signOutLabel}
                 </span>
                 {showMemberName && <span className="font-medium text-[var(--text)]/80">{r.memberName}</span>}
                 <span className="text-[var(--dim)] text-xs">{formatTime(r.time)}</span>
               </div>
               {r.signature && onViewSignature && (
                 <button
-                  onClick={() => onViewSignature(r.memberName, r.signature!, r.type === "in" ? "签到签名" : "签退签名")}
+                  onClick={() => onViewSignature(r.memberName, r.signature!, r.type === "in" ? `${t.checkInLabel}${t.signature}` : `${t.signOutLabel}${t.signature}`)}
                   className="text-xs text-[var(--green)] hover:underline"
                 >
-                  查看签名
+                  {t.viewSignature}
                 </button>
               )}
             </div>
@@ -107,6 +115,7 @@ function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
 }
 
 export default function HistoryDayList({ days, from, to, onFromChange, onToChange, onViewSignature, showMemberName = true }: HistoryDayListProps) {
+  const { t } = useT();
   return (
     <div>
       {/* Date picker */}
@@ -117,7 +126,7 @@ export default function HistoryDayList({ days, from, to, onFromChange, onToChang
           onChange={(e) => onFromChange(e.target.value)}
           className="input-pt text-sm py-2 px-3 w-auto"
         />
-        <span className="text-xs text-[var(--muted)]">至</span>
+        <span className="text-xs text-[var(--muted)]">{t.to}</span>
         <input
           type="date"
           value={to}
@@ -127,7 +136,7 @@ export default function HistoryDayList({ days, from, to, onFromChange, onToChang
       </div>
 
       {days.length === 0 && (
-        <p className="text-[var(--muted)] text-sm py-8 text-center">暂无记录</p>
+        <p className="text-[var(--muted)] text-sm py-8 text-center">{t.noRecords}</p>
       )}
 
       {days.map((day, i) => (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { gsap, useGSAP, useReducedMotion } from "@/lib/gsap";
+import { useT } from "@/i18n";
 import MemberCard from "@/components/MemberCard";
 import AddMemberModal from "@/components/AddMemberModal";
 import SignatureModal from "@/components/SignatureModal";
@@ -30,6 +31,7 @@ interface TeamStatus {
 }
 
 export default function HomePage() {
+  const { t, lang, setLang } = useT();
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -237,9 +239,9 @@ export default function HomePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memberId: signModal.memberId, type, signature }),
     });
-    if (!res.ok) { setToastMsg("操作失败，请重试"); return; }
+    if (!res.ok) { setToastMsg(t.opFailed); return; }
     const record = await res.json();
-    if (!record.id) { setToastMsg("操作失败，请重试"); return; }
+    if (!record.id) { setToastMsg(t.opFailed); return; }
     setSignModal(null);
     await fetchStatus();
     const actionLabel = type === "in" ? "签到" : "签退";
@@ -262,7 +264,7 @@ export default function HomePage() {
       return member.status === "in";
     });
     const skipped = selectedIds.size - validIds.length;
-    if (validIds.length === 0) { setToastMsg(action === "in" ? "所选成员无需签到" : "所选成员无需签退"); return; }
+    if (validIds.length === 0) { setToastMsg(action === "in" ? t.noNeedCheckIn : t.noNeedSignOut); return; }
     if (skipped > 0) {
       setBatchConfirm({ action, validIds, skipped, valid: validIds.length });
       return;
@@ -282,7 +284,7 @@ export default function HomePage() {
       const record = await res.json();
       if (record.id) records.push(record.id);
     }
-    if (records.length === 0) { setToastMsg("操作失败"); return; }
+    if (records.length === 0) { setToastMsg(t.opFailed); return; }
     const label = action === "in" ? "签到" : "签退";
     const entry: UndoEntry = { recordIds: records, label: `批量${label} ${validIds.length} 人` };
     setUndoStack(prev => {
@@ -327,7 +329,7 @@ export default function HomePage() {
       return next;
     });
     await fetchStatus();
-    setToastMsg(`已撤销 ${undoLabel}`);
+    setToastMsg(t.undoDone.replace("{label}", undoLabel));
   }
 
   const viewUrl = teamId ? `${window.location.origin}/view/${teamId}` : "";
@@ -338,6 +340,12 @@ export default function HomePage() {
       {/* ── Top Bar ── */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-4" style={{ background: "#0a1a0f", color: "#fff" }}>
         <Hamburger open={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)} />
+        {/* Language toggle */}
+        <div className="flex items-center gap-0.5 ml-2">
+          <button onClick={() => setLang(lang === "zh" ? "en" : "zh")} className="text-[10px] px-1.5 py-0.5 rounded text-white/40 hover:text-white/80 transition-colors font-bold uppercase">
+            {lang === "zh" ? "EN" : "中文"}
+          </button>
+        </div>
         <div className="text-center flex-1 mx-4">
           {teamName && (
             <span className="text-lg font-black tracking-wide block leading-tight text-white" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>
@@ -355,23 +363,23 @@ export default function HomePage() {
           onClick={() => setTab("checkin")}
           className={`px-6 py-2 rounded-full text-sm font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 ${tab === "checkin" ? "bg-[#00e85c] text-black" : "text-white/50 hover:text-white"}`}
           style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}
-        ><IconCheckIn size={16} /> 签到</button>
+        ><IconCheckIn size={16} /> {t.checkIn}</button>
         <button
           onClick={() => setTab("history")}
           className={`px-6 py-2 rounded-full text-sm font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 ${tab === "history" ? "bg-[#00e85c] text-black" : "text-white/50 hover:text-white"}`}
           style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}
-        ><IconHistory size={16} /> 历史</button>
+        ><IconHistory size={16} /> {t.history}</button>
         <div className="flex-1" />
         {teamId && (
           <div className="flex items-center gap-1.5">
             <button onClick={() => handleUndo(0)} disabled={undoStack.length === 0} className="text-xs px-2 py-1.5 rounded-full text-white/60 hover:text-[#00e85c] border border-white/15 hover:border-[#00e85c] transition-all flex items-center gap-1 disabled:opacity-20 disabled:cursor-not-allowed">
-              <IconUndo size={13} /> 撤回
+              <IconUndo size={13} /> {t.undo}
             </button>
             <button
               onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }}
               className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1 ${batchMode ? "bg-[#00e85c] text-black" : "text-white/60 hover:text-white border border-white/20"}`}
             >
-              <IconBatch size={13} /> {batchMode ? "完成" : "批量"}
+              <IconBatch size={13} /> {batchMode ? t.done : t.batch}
             </button>
           </div>
         )}
@@ -384,15 +392,15 @@ export default function HomePage() {
           <div className="flex-1 flex items-center justify-center p-4">
             <div className="text-center glass-card p-10 rounded-2xl">
               <div className="text-[var(--green)] mb-4"><IconFootball size={64} /></div>
-              <p className="text-[var(--muted)] mb-6 text-lg font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>创建第一个团队</p>
+              <p className="text-[var(--muted)] mb-6 text-lg font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.createFirstTeam}</p>
               <form onSubmit={createTeam} className="flex gap-2">
                 <input
                   className="input-pt text-sm"
-                  placeholder="输入团队名称"
+                  placeholder={t.teamNamePlaceholder}
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                 />
-                <button type="submit" className="bg-[var(--green)] text-white px-6 py-2 rounded-full text-sm font-bold hover:brightness-110 transition-all whitespace-nowrap">创建</button>
+                <button type="submit" className="bg-[var(--green)] text-white px-6 py-2 rounded-full text-sm font-bold hover:brightness-110 transition-all whitespace-nowrap">{t.create}</button>
               </form>
             </div>
           </div>
@@ -428,17 +436,17 @@ export default function HomePage() {
                   <div className="flex gap-3 flex-[2]">
                     <button onClick={() => handleBatch("in")} disabled={selectedIds.size === 0} className="flex-1 aspect-square rounded-2xl bg-[#00e85c] text-black font-bold disabled:opacity-30 hover:brightness-110 transition-all flex flex-col items-center justify-center gap-0.5">
                       <IconCheckIn size={22} />
-                      <span className="text-xs leading-tight">全部<br/>签到</span>
+                      <span className="text-xs leading-tight">{t.batchCheckIn.split("\n")[0]}<br/>{t.batchCheckIn.split("\n")[1]}</span>
                     </button>
                     <button onClick={() => handleBatch("out")} disabled={selectedIds.size === 0} className="flex-1 aspect-square rounded-2xl bg-[#e83030] text-white font-bold disabled:opacity-30 hover:brightness-110 transition-all flex flex-col items-center justify-center gap-0.5">
                       <IconSignOut size={22} />
-                      <span className="text-xs leading-tight">全部<br/>签退</span>
+                      <span className="text-xs leading-tight">{t.batchSignOut.split("\n")[0]}<br/>{t.batchSignOut.split("\n")[1]}</span>
                     </button>
                   </div>
                   {/* Right — select buttons stacked, filling same height */}
                   <div className="flex flex-col gap-2 flex-1">
-                    <button onClick={() => setSelectedIds(new Set(status?.members.map(m => m.id) || []))} className="flex-1 bg-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1.5"><IconSelectAll size={16} /> 全选</button>
-                    <button onClick={() => setSelectedIds(new Set())} className="flex-1 bg-white/5 text-white/60 rounded-xl text-sm font-bold hover:bg-white/15 hover:text-white/80 transition-all flex items-center justify-center gap-1.5"><IconDeselect size={16} /> 取消</button>
+                    <button onClick={() => setSelectedIds(new Set(status?.members.map(m => m.id) || []))} className="flex-1 bg-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1.5"><IconSelectAll size={16} /> {t.selectAll}</button>
+                    <button onClick={() => setSelectedIds(new Set())} className="flex-1 bg-white/5 text-white/60 rounded-xl text-sm font-bold hover:bg-white/15 hover:text-white/80 transition-all flex items-center justify-center gap-1.5"><IconDeselect size={16} /> {t.deselect}</button>
                   </div>
                 </div>
               </div>
@@ -462,11 +470,11 @@ export default function HomePage() {
 
       {/* ── Confirm Sign-Out Modal ── */}
       <AnimatedModal show={confirmModal !== null} onClose={() => setConfirmModal(null)}>
-        <h3 className="text-lg font-bold mb-2 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>确认签退</h3>
-        <p className="text-sm text-[var(--muted)] mb-4">{confirmModal?.name} 确定要签退吗？</p>
+        <h3 className="text-lg font-bold mb-2 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.confirmSignOut}</h3>
+        <p className="text-sm text-[var(--muted)] mb-4">{t.confirmSignOutMsg.replace("{name}", confirmModal?.name || "")}</p>
         <div className="flex gap-3">
-          <button onClick={() => setConfirmModal(null)} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">取消</button>
-          <button onClick={handleConfirmSignOut} className="flex-1 bg-[#e83030] text-white py-3 rounded-xl text-base font-bold hover:brightness-110 transition-all">确定签退</button>
+          <button onClick={() => setConfirmModal(null)} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">{t.cancel}</button>
+          <button onClick={handleConfirmSignOut} className="flex-1 bg-[#e83030] text-white py-3 rounded-xl text-base font-bold hover:brightness-110 transition-all">{t.confirmSignOutBtn}</button>
         </div>
       </AnimatedModal>
 
@@ -525,11 +533,11 @@ export default function HomePage() {
       {/* Batch confirm */}
       {batchConfirm && (
         <ConfirmModal
-          title={batchConfirm.action === "in" ? "批量签到" : "批量签退"}
+          title={batchConfirm.action === "in" ? t.batchInTitle : t.batchOutTitle}
           message={batchConfirm.action === "in"
-            ? `${batchConfirm.skipped} 人已到场或已签退，确定仅为剩余 ${batchConfirm.valid} 人签到？`
-            : `${batchConfirm.skipped} 人不在场，确定仅为剩余 ${batchConfirm.valid} 人签退？`}
-          confirmLabel="确定"
+            ? t.batchInMsg.replace("{skipped}", String(batchConfirm.skipped)).replace("{valid}", String(batchConfirm.valid))
+            : t.batchOutMsg.replace("{skipped}", String(batchConfirm.skipped)).replace("{valid}", String(batchConfirm.valid))}
+          confirmLabel={t.confirm}
           onConfirm={async () => {
             const { action, validIds } = batchConfirm;
             setBatchConfirm(null);
@@ -542,9 +550,9 @@ export default function HomePage() {
       {/* Reset confirm */}
       {resetConfirm && (
         <ConfirmModal
-          title="重置今日记录"
-          message="确定要重置今日所有签到记录吗？此操作不可撤销。"
-          confirmLabel="重置"
+          title={t.resetTitle}
+          message={t.resetMsg}
+          confirmLabel={t.resetBtn}
           danger
           onConfirm={handleResetToday}
           onCancel={() => setResetConfirm(false)}

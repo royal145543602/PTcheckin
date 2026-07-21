@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { gsap } from "@/lib/gsap";
+import { useT } from "@/i18n";
 import Dropdown from "@/components/Dropdown";
 import Toast from "@/components/Toast";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -35,6 +36,7 @@ interface SidebarProps {
 const hdrStyle = { color: "rgba(0,0,0,0.45)", textShadow: "0 1px 0 rgba(255,255,255,0.8)" };
 
 export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, batchMode, onToggleBatch, onAddMemberClick, viewUrl, onResetToday }: SidebarProps) {
+  const { t } = useT();
   const [newName, setNewName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [renaming, setRenaming] = useState(false);
@@ -73,7 +75,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
   async function handleAdd(e: React.FormEvent) { e.preventDefault(); if (!newName.trim()) return; await onAddMember(newName.trim()); setNewName(""); }
   async function handleCreateTeam(e: React.FormEvent) { e.preventDefault(); if (!newTeamName.trim()) return; await onCreateTeam(newTeamName.trim()); setNewTeamName(""); }
   async function handleRenameSubmit(e: React.FormEvent) { e.preventDefault(); if (!renameValue.trim() || !selectedTeamId) return; await onRenameTeam(selectedTeamId, renameValue.trim()); setRenaming(false); }
-  async function handleCopy() { await navigator.clipboard.writeText(viewUrl); setToastMsg(`已复制 ${selectedTeam?.name} 的查看链接`); }
+  async function handleCopy() { await navigator.clipboard.writeText(viewUrl); setToastMsg(t.copiedLink.replace("{name}", selectedTeam?.name || "")); }
 
   function checkPin(action: () => void) { if (pinAuthed) { action(); return; } setPinModal({ action }); setPinInput(""); }
   function handlePinSubmit(e: React.FormEvent) {
@@ -97,7 +99,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
 
         {/* ── Header ── */}
         <div className="px-6 py-5 flex items-center justify-between sidebar-item" style={{ borderBottom: "1px solid var(--border)" }}>
-          <h2 className="text-xl font-black tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>PRIMETIME</h2>
+          <h2 className="text-xl font-black tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.brand}</h2>
           <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--muted)] hover:bg-black/5 hover:text-[var(--text)] transition-all text-xl">&times;</button>
         </div>
 
@@ -105,34 +107,34 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
 
           {/* ── 1. Team ── */}
           <div className="sidebar-item px-6 overflow-visible">
-            <span className="text-sm font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={hdrStyle}><IconFootball size={15} /> 团队</span>
+            <span className="text-sm font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={hdrStyle}><IconFootball size={15} /> {t.team}</span>
             <Dropdown
               value={selectedTeamId || ""}
               options={teams.map(t => ({ value: t.id, label: t.name }))}
               onChange={onSelectTeam}
-              placeholder="选择团队"
+              placeholder={t.selectTeam}
             />
             <form onSubmit={handleCreateTeam} className="flex gap-2 mt-2.5">
-              <input className="input-pt flex-1 text-sm py-2.5 px-3.5" placeholder="新建团队…" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} />
-              <button type="submit" className="bg-[var(--green)] text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:brightness-110 transition-all flex-shrink-0" style={{ boxShadow: "0 2px 10px rgba(0,232,92,0.3)" }}>创建</button>
+              <input className="input-pt flex-1 text-sm py-2.5 px-3.5" placeholder={t.newTeam} value={newTeamName} onChange={e => setNewTeamName(e.target.value)} />
+              <button type="submit" className="bg-[var(--green)] text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:brightness-110 transition-all flex-shrink-0" style={{ boxShadow: "0 2px 10px rgba(0,232,92,0.3)" }}>{t.create}</button>
             </form>
           </div>
 
           {/* ── 2. Team Settings ── */}
           {selectedTeamId && (
             <div className="sidebar-item px-6 space-y-2.5">
-              <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={hdrStyle}><IconGear size={15} /> 团队设置</span>
+              <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={hdrStyle}><IconGear size={15} /> {t.teamSettings}</span>
               {renaming ? (
                 <form onSubmit={handleRenameSubmit} className="flex gap-2">
                   <input className="input-pt flex-1 text-sm py-2.5 px-3.5" value={renameValue} onChange={e => setRenameValue(e.target.value)} placeholder={selectedTeam?.name} autoFocus />
-                  <button type="submit" className="text-sm bg-[var(--green)] text-white px-4 py-2.5 rounded-lg font-bold" style={{ boxShadow: "0 2px 10px rgba(0,232,92,0.3)" }}>保存</button>
-                  <button type="button" onClick={() => setRenaming(false)} className="text-sm text-[var(--muted)] px-2">取消</button>
+                  <button type="submit" className="text-sm bg-[var(--green)] text-white px-4 py-2.5 rounded-lg font-bold" style={{ boxShadow: "0 2px 10px rgba(0,232,92,0.3)" }}>{t.save}</button>
+                  <button type="button" onClick={() => setRenaming(false)} className="text-sm text-[var(--muted)] px-2">{t.cancel}</button>
                 </form>
               ) : (
                 <div className="flex gap-3">
-                  <button onClick={() => { setRenameValue(selectedTeam?.name || ""); setRenaming(true); }} className="text-sm text-[var(--green)] hover:underline font-medium">重命名</button>
+                  <button onClick={() => { setRenameValue(selectedTeam?.name || ""); setRenaming(true); }} className="text-sm text-[var(--green)] hover:underline font-medium">{t.rename}</button>
                   <span className="text-[var(--border)]">|</span>
-                  <button onClick={() => checkPin(() => setDeleteConfirm(true))} className="text-sm text-red-400/60 hover:text-red-400 transition-colors">删除团队</button>
+                  <button onClick={() => checkPin(() => setDeleteConfirm(true))} className="text-sm text-red-400/60 hover:text-red-400 transition-colors">{t.deleteTeam}</button>
                 </div>
               )}
             </div>
@@ -142,18 +144,18 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
           {selectedTeamId && (
             <div className="sidebar-item px-6">
               <div className="flex items-center justify-between mb-3.5">
-                <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={hdrStyle}><IconPerson size={15} /> 成员</span>
-                <span className="text-xs text-[var(--dim)]">{members.length} 人</span>
+                <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={hdrStyle}><IconPerson size={15} /> {t.members}</span>
+                <span className="text-xs text-[var(--dim)]">{t.ppl.replace("{count}", String(members.length))}</span>
               </div>
               <form onSubmit={handleAdd} className="flex gap-2 mb-3.5">
-                <input className="input-pt flex-1 text-sm py-3 px-3.5" placeholder="添加成员…" value={newName} onChange={e => setNewName(e.target.value)} />
+                <input className="input-pt flex-1 text-sm py-3 px-3.5" placeholder={t.addMember} value={newName} onChange={e => setNewName(e.target.value)} />
                 <button type="submit" className="bg-[var(--green)] text-white w-11 h-11 rounded-xl text-lg font-bold hover:brightness-110 transition-all flex items-center justify-center flex-shrink-0" style={{ boxShadow: "0 2px 12px rgba(0,232,92,0.35)" }}>+</button>
               </form>
               <ul className="space-y-1 max-h-64 overflow-y-auto -mx-1">
                 {members.map(m => (
                   <li key={m.id} className="flex items-center justify-between py-2.5 px-3.5 rounded-xl hover:bg-black/[0.03] transition-colors group">
                     <span className="text-[15px] font-medium text-[var(--text)]/85">{m.name}</span>
-                    <button onClick={() => checkPin(() => onDeleteMember(m.id))} className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-500 transition-all">删除</button>
+                    <button onClick={() => checkPin(() => onDeleteMember(m.id))} className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-500 transition-all">{t.delete}</button>
                   </li>
                 ))}
               </ul>
@@ -163,9 +165,9 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
           {/* ── 4. Quick links ── */}
           {selectedTeamId && (
             <div className="sidebar-item px-6">
-              <span className="text-sm font-bold uppercase tracking-widest mb-3.5 flex items-center gap-2" style={hdrStyle}><IconLink size={15} /> 快捷链接</span>
+              <span className="text-sm font-bold uppercase tracking-widest mb-3.5 flex items-center gap-2" style={hdrStyle}><IconLink size={15} /> {t.quickLinks}</span>
               <div className="space-y-2">
-                <button onClick={handleCopy} className="w-full text-left text-[15px] text-[var(--text)]/60 hover:text-[var(--green)] transition-colors px-1">复制家长查看链接</button>
+                <button onClick={handleCopy} className="w-full text-left text-[15px] text-[var(--text)]/60 hover:text-[var(--green)] transition-colors px-1">{t.copyViewLink}</button>
               </div>
             </div>
           )}
@@ -175,17 +177,17 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
         {selectedTeamId && (
           <div className="px-6 py-5 border-t border-[var(--border)]">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: "rgba(0,0,0,0.35)", textShadow: "0 1px 0 rgba(255,255,255,0.7)" }}><IconAlert size={15} /> 危险操作</span>
-              <span className="text-xs text-[var(--dim)]">{pinAuthed ? "已解锁" : "需密码"}</span>
+              <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: "rgba(0,0,0,0.35)", textShadow: "0 1px 0 rgba(255,255,255,0.7)" }}><IconAlert size={15} /> {t.dangerZone}</span>
+              <span className="text-xs text-[var(--dim)]">{pinAuthed ? t.unlocked : t.locked}</span>
             </div>
             <div className="mt-3 space-y-1.5">
               {onResetToday && (
                 <button onClick={() => checkPin(() => onResetToday())} className="w-full text-left flex items-center gap-2.5 text-sm text-red-400/60 hover:text-red-400 transition-colors py-2">
-                  <IconLock size={13} /> 重置今日所有签到
+                  <IconLock size={13} /> {t.resetToday}
                 </button>
               )}
               <button onClick={() => checkPin(() => setDeleteConfirm(true))} className="w-full text-left flex items-center gap-2.5 text-sm text-red-400/60 hover:text-red-400 transition-colors py-2">
-                <IconLock size={13} /> 删除 "{selectedTeam?.name}"
+                <IconLock size={13} /> {t.deleteTeamDanger.replace("{name}", selectedTeam?.name || "")}
               </button>
             </div>
           </div>
@@ -198,9 +200,9 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
       {/* Delete confirm */}
       {deleteConfirm && (
         <ConfirmModal
-          title="删除团队"
-          message="确定要删除该团队及其所有成员和记录吗？此操作不可撤销。"
-          confirmLabel="删除"
+          title={t.deleteTeam}
+          message={t.deleteTeamConfirm}
+          confirmLabel={t.delete}
           danger
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteConfirm(false)}
@@ -209,11 +211,11 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
 
       {/* PIN modal */}
       <AnimatedModal show={pinModal !== null} onClose={() => setPinModal(null)}>
-        <h3 className="text-lg font-bold mb-1 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>管理密码</h3>
-        <p className="text-xs text-[var(--muted)] mb-4">默认密码 0000</p>
+        <h3 className="text-lg font-bold mb-1 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.adminPin}</h3>
+        <p className="text-xs text-[var(--muted)] mb-4">{t.defaultPin}</p>
         <form onSubmit={handlePinSubmit}>
           <input type="password" className="input-pt text-lg text-center mb-4" placeholder="PIN" value={pinInput} onChange={e => setPinInput(e.target.value)} autoFocus />
-          <button type="submit" className="w-full bg-[var(--green)] text-white py-3 rounded-xl text-base font-bold hover:brightness-110 transition-all" style={{ boxShadow: "0 2px 12px rgba(0,232,92,0.3)" }}>确认</button>
+          <button type="submit" className="w-full bg-[var(--green)] text-white py-3 rounded-xl text-base font-bold hover:brightness-110 transition-all" style={{ boxShadow: "0 2px 12px rgba(0,232,92,0.3)" }}>{t.submitPin}</button>
         </form>
       </AnimatedModal>
     </>

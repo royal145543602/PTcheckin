@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import Providers from "./Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "签到系统",
+  title: "PRIMETIME Check-in",
 };
 
 export const viewport: Viewport = {
@@ -12,8 +13,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
-      <body className="min-h-screen" style={{ background: "var(--bg)" }}>{children}</body>
+    <html lang="en">
+      <body className="min-h-screen" style={{ background: "var(--bg)" }}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

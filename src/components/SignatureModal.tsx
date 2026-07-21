@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { gsap } from "@/lib/gsap";
 import SignaturePad from "@/components/SignaturePad";
 import type { SignatureData } from "@/lib/types";
+import { useT } from "@/i18n";
 
 interface SignatureModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface SignatureModalProps {
 }
 
 export default function SignatureModal({ isOpen, onClose, onConfirm, memberName, actionType }: SignatureModalProps) {
+  const { t } = useT();
   const [strokes, setStrokes] = useState<SignatureData>([]);
   const [loading, setLoading] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
@@ -63,7 +65,7 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
 
   if (!isOpen) return null;
 
-  const actionLabel = actionType === "in" ? "签到" : "签退";
+  const actionLabel = actionType === "in" ? t.checkInLabel : t.signOutLabel;
   const actionColor = actionType === "in" ? "var(--green)" : "#e83030";
 
   return (
@@ -71,11 +73,11 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
       {confirmSkip && createPortal(
         <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setConfirmSkip(false)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs" style={{ boxShadow: "0 16px 56px rgba(0,0,0,0.25)" }} onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-2 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>还没签名</h3>
-            <p className="text-sm text-[var(--muted)] mb-4">确定要跳过签名吗？</p>
+            <h3 className="text-lg font-bold mb-2 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.noSignature}</h3>
+            <p className="text-sm text-[var(--muted)] mb-4">{t.skipConfirmMsg}</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmSkip(false)} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">继续签名</button>
-              <button onClick={handleForceConfirm} disabled={loading} className="flex-1 py-3 rounded-xl text-base font-bold text-white hover:brightness-110 transition-all disabled:opacity-50" style={{ background: actionColor }}>确定跳过</button>
+              <button onClick={() => setConfirmSkip(false)} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">{t.continueSign}</button>
+              <button onClick={handleForceConfirm} disabled={loading} className="flex-1 py-3 rounded-xl text-base font-bold text-white hover:brightness-110 transition-all disabled:opacity-50" style={{ background: actionColor }}>{t.skipConfirm}</button>
             </div>
           </div>
         </div>,
@@ -88,7 +90,7 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
             <h3 className="text-xl font-bold font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>
               <span style={{ color: actionColor }}>{actionLabel}</span> — {memberName}
             </h3>
-            <p className="text-sm text-[var(--muted)]">请签名确认</p>
+            <p className="text-sm text-[var(--muted)]">{t.pleaseSign}</p>
           </div>
           <button onClick={handleClose} className="text-[var(--muted)] hover:text-[var(--green)] text-2xl transition-colors">&times;</button>
         </div>
@@ -101,12 +103,12 @@ export default function SignatureModal({ isOpen, onClose, onConfirm, memberName,
 
         <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--border)]" style={{ background: "var(--bg-card)" }}>
           <div className="flex gap-2">
-            <button onClick={() => setStrokes(strokes.slice(0, -1))} disabled={strokes.length === 0} className="text-sm px-4 py-2 rounded-lg border border-black/10 text-black/50 disabled:opacity-30 hover:border-black/20 hover:text-black/80 transition-all">撤销</button>
-            <button onClick={() => setStrokes([])} disabled={strokes.length === 0} className="text-sm px-4 py-2 rounded-lg border border-black/10 text-black/50 disabled:opacity-30 hover:border-black/20 hover:text-black/80 transition-all">清除</button>
+            <button onClick={() => setStrokes(strokes.slice(0, -1))} disabled={strokes.length === 0} className="text-sm px-4 py-2 rounded-lg border border-black/10 text-black/50 disabled:opacity-30 hover:border-black/20 hover:text-black/80 transition-all">{t.undoStroke}</button>
+            <button onClick={() => setStrokes([])} disabled={strokes.length === 0} className="text-sm px-4 py-2 rounded-lg border border-black/10 text-black/50 disabled:opacity-30 hover:border-black/20 hover:text-black/80 transition-all">{t.clearAll}</button>
           </div>
           <div className="flex gap-3">
-            <button onClick={handleSkip} disabled={loading} className="px-6 py-3 rounded-xl text-base font-medium text-[var(--muted)] disabled:opacity-50 hover:text-[var(--text)] transition-all">跳过签名</button>
-            <button onClick={handleConfirm} disabled={loading} className="px-8 py-3 rounded-xl text-base font-bold disabled:opacity-50 hover:brightness-110 transition-all" style={{ background: actionColor, color: "#fff" }}>确认{actionLabel}</button>
+            <button onClick={handleSkip} disabled={loading} className="px-6 py-3 rounded-xl text-base font-medium text-[var(--muted)] disabled:opacity-50 hover:text-[var(--text)] transition-all">{t.skipSignature}</button>
+            <button onClick={handleConfirm} disabled={loading} className="px-8 py-3 rounded-xl text-base font-bold disabled:opacity-50 hover:brightness-110 transition-all" style={{ background: actionColor, color: "#fff" }}>{t.confirmAction.replace("{action}", actionLabel)}</button>
           </div>
         </div>
       </div>
