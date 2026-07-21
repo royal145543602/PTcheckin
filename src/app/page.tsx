@@ -336,7 +336,7 @@ export default function HomePage() {
   const teamName = status?.team.name || teams.find(t => t.id === teamId)?.name || "";
 
   return (
-    <main className="min-h-screen flex flex-col relative max-w-full overflow-x-hidden" style={{ background: "var(--bg)", zIndex: 1 }}>
+    <main className="min-h-screen flex flex-col relative" style={{ background: "var(--bg)", zIndex: 1, maxWidth: "100vw", overflowX: "hidden" }}>
       {/* ── Top Bar ── */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4" style={{ background: "#0a1a0f", color: "#fff" }}>
         <Hamburger open={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)} />
