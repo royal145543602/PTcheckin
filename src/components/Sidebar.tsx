@@ -181,21 +181,19 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
             </div>
           {/* ── Danger Zone ── */}
           {selectedTeamId && (
-            <div className="sidebar-item px-6 py-5 border-t border-[var(--border)]">
-              <div className="flex items-center justify-between mb-3">
+            <div className="sidebar-item py-5 border-t border-[var(--border)]">
+              <div className="flex items-center justify-between mb-3 px-6">
                 <span className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: "rgba(0,0,0,0.35)", textShadow: "0 1px 0 rgba(255,255,255,0.7)" }}><IconAlert size={15} /> {t.dangerZone}</span>
                 <span className="text-xs text-[var(--dim)]">{pinAuthed ? t.unlocked : t.locked}</span>
               </div>
-              <div className="space-y-1.5">
-                {onResetToday && (
-                  <button onClick={() => checkPin(() => onResetToday())} className="w-full text-left flex items-center gap-2.5 text-sm text-red-400/60 hover:text-red-400 transition-colors py-2">
-                    <IconLock size={13} /> {t.resetToday}
-                  </button>
-                )}
-                <button onClick={() => checkPin(() => setDeleteConfirm(true))} className="w-full text-left flex items-center gap-2.5 text-sm text-red-400/60 hover:text-red-400 transition-colors py-2">
-                  <IconLock size={13} /> {t.deleteTeamDanger.replace("{name}", selectedTeam?.name || "")}
+              {onResetToday && (
+                <button onClick={() => checkPin(() => onResetToday())} className="w-full text-left flex items-center gap-2.5 text-sm text-red-400/60 hover:text-red-400 transition-colors py-2 px-6">
+                  <IconLock size={13} /> {t.resetToday}
                 </button>
-              </div>
+              )}
+              <button onClick={() => checkPin(() => setDeleteConfirm(true))} className="w-full text-left flex items-center gap-2.5 text-sm text-red-400/60 hover:text-red-400 transition-colors py-2 px-6">
+                <IconLock size={13} /> {t.deleteTeamDanger.replace("{name}", selectedTeam?.name || "")}
+              </button>
             </div>
           )}
           </div>
