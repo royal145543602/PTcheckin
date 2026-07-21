@@ -60,14 +60,14 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
     if (!sidebar || !overlay) return;
     gsap.killTweensOf([sidebar, overlay, ".sidebar-item"]);
     if (isOpen) {
-      gsap.set(sidebar, { x: -360, autoAlpha: 0 });
+      gsap.set(sidebar, { xPercent: -100, autoAlpha: 0 });
       gsap.set(overlay, { autoAlpha: 0 });
       gsap.set(".sidebar-item", { x: -16, autoAlpha: 0 });
-      gsap.to(sidebar, { x: 0, autoAlpha: 1, duration: 0.28, ease: "gsap-quart-out" });
+      gsap.to(sidebar, { xPercent: 0, autoAlpha: 1, duration: 0.28, ease: "gsap-quart-out" });
       gsap.to(overlay, { autoAlpha: 1, pointerEvents: "auto", duration: 0.25 });
       gsap.to(".sidebar-item", { x: 0, autoAlpha: 1, duration: 0.3, stagger: { each: 0.05 }, ease: "gsap-quart-out", delay: 0.06 });
     } else {
-      gsap.to(sidebar, { x: -360, autoAlpha: 0, duration: 0.2, ease: "power3.in" });
+      gsap.to(sidebar, { xPercent: -100, autoAlpha: 0, duration: 0.2, ease: "power3.in" });
       gsap.to(overlay, { autoAlpha: 0, pointerEvents: "none", duration: 0.2 });
     }
   }, [isOpen]);
@@ -93,9 +93,9 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
 
   return (
     <>
-      <div ref={overlayRef} className="fixed top-0 left-[360px] right-0 bottom-0 z-[44]" style={{ background: "rgba(0,0,0,0.15)", opacity: 0, visibility: "hidden", pointerEvents: "none" }} onClick={onClose} />
+      <div ref={overlayRef} className="fixed top-0 left-0 right-0 bottom-0 z-[44]" style={{ background: "rgba(0,0,0,0.15)", opacity: 0, visibility: "hidden", pointerEvents: "none" }} onClick={onClose} />
 
-      <div ref={sidebarRef} className="fixed top-0 left-0 h-full w-[360px] z-[45] flex flex-col" style={{ background: "#fff", borderRight: "1px solid rgba(0,0,0,0.08)", opacity: 0, visibility: "hidden" }}>
+      <div ref={sidebarRef} className="fixed top-0 left-0 h-full w-[85vw] max-w-[360px] z-[45] flex flex-col" style={{ background: "#fff", borderRight: "1px solid rgba(0,0,0,0.08)", opacity: 0, visibility: "hidden" }}>
 
         {/* ── Header ── */}
         <div className="px-6 py-5 flex items-center justify-between sidebar-item" style={{ borderBottom: "1px solid var(--border)" }}>
