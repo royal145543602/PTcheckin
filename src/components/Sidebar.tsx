@@ -93,7 +93,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
 
   return (
     <>
-      <div ref={overlayRef} className="fixed top-0 left-0 right-0 bottom-0 z-[44]" style={{ background: "rgba(0,0,0,0.15)", opacity: 0, visibility: "hidden", pointerEvents: "none" }} onClick={onClose} />
+      <div ref={overlayRef} className="fixed top-0 left-0 right-0 bottom-0 z-[44]" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)", opacity: 0, visibility: "hidden", pointerEvents: "none" }} onClick={onClose} />
 
       <div ref={sidebarRef} className="fixed top-0 left-0 h-full w-[85vw] max-w-[360px] z-[45] flex flex-col" style={{ background: "#fff", borderRight: "1px solid rgba(0,0,0,0.08)", opacity: 0, visibility: "hidden" }}>
 
