@@ -84,9 +84,8 @@ export function IconGroup(p: IconProps) {
 export function IconFootball(p: IconProps) {
   return <svg {...s(p)}>
     <circle cx="12" cy="12" r="10"/>
-    <path d="M15.7 4.3 19 7l2 5-1 5-5 3-5.5 2-6-2-2.5-5 1.5-5L6 7Z"/>
-    <line x1="12" y1="2" x2="12" y2="22"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
+    <path d="M11.9 6.7s-3 1.3-5 3.6c0 0 0 3.6 1.9 5.9c0 0 3.1.7 6.2 0c0 0 1.9-2.3 1.9-5.9c0 .1-2-2.3-5-3.6m0 0V2m5 8.4s3-1.4 4.5-1.6M15 16.3s1.9 2.7 2.9 3.7m-9.1-3.7S6.9 19 6 20"/>
+    <path d="M2.6 8.7C4 9 7 10.4 7 10.4"/>
   </svg>;
 }
 
