@@ -46,6 +46,11 @@ body {
   min-height: 100dvh;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* ═══ BACKGROUND TEXTURE ═══ */
 body::before {
   content: '';
