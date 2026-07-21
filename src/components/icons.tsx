@@ -82,7 +82,11 @@ export function IconGroup(p: IconProps) {
 }
 
 export function IconFootball(p: IconProps) {
-  return <svg {...s(p)}><circle cx="12" cy="12" r="9"/><path d="M12 3a6.7 6.7 0 0 0 0 18"/><path d="M3 12h18"/><path d="M5.5 5.5l13 13"/><path d="M18.5 5.5l-13 13"/></svg>;
+  return <svg {...s(p)}>
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 3v18M3 12h18"/>
+    <path d="M8 5l-3 7 4 7M16 5l3 7-4 7M7 8l10 2M7 16l10-2"/>
+  </svg>;
 }
 
 export function IconSignature(p: IconProps) {
