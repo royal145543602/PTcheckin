@@ -340,12 +340,6 @@ export default function HomePage() {
       {/* ── Top Bar ── */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-4" style={{ background: "#0a1a0f", color: "#fff" }}>
         <Hamburger open={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)} />
-        {/* Language toggle */}
-        <div className="flex items-center gap-0.5 ml-2">
-          <button onClick={() => setLang(lang === "zh" ? "en" : "zh")} className="text-[10px] px-1.5 py-0.5 rounded text-white/40 hover:text-white/80 transition-colors font-bold uppercase">
-            {lang === "zh" ? "EN" : "中文"}
-          </button>
-        </div>
         <div className="text-center flex-1 mx-4">
           {teamName && (
             <span className="text-lg font-black tracking-wide block leading-tight text-white" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>

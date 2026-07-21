@@ -36,7 +36,7 @@ interface SidebarProps {
 const hdrStyle = { color: "rgba(0,0,0,0.45)", textShadow: "0 1px 0 rgba(255,255,255,0.8)" };
 
 export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, batchMode, onToggleBatch, onAddMemberClick, viewUrl, onResetToday }: SidebarProps) {
-  const { t } = useT();
+  const { t, lang, setLang } = useT();
   const [newName, setNewName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [renaming, setRenaming] = useState(false);
@@ -104,6 +104,15 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
         </div>
 
         <div className="flex-1 overflow-y-auto py-5 space-y-7">
+
+          {/* ── Language ── */}
+          <div className="sidebar-item px-6">
+            <span className="text-sm font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={hdrStyle}>🌐 Language</span>
+            <div className="flex gap-2">
+              <button onClick={() => setLang("en")} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${lang === "en" ? "bg-[var(--green)] text-black" : "bg-black/5 text-[var(--dim)] hover:bg-black/10"}`}>English</button>
+              <button onClick={() => setLang("zh")} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${lang === "zh" ? "bg-[var(--green)] text-black" : "bg-black/5 text-[var(--dim)] hover:bg-black/10"}`}>繁體中文</button>
+            </div>
+          </div>
 
           {/* ── 1. Team ── */}
           <div className="sidebar-item px-6 overflow-visible">
