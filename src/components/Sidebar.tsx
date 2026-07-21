@@ -99,7 +99,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
 
         {/* ── Header ── */}
         <div className="px-6 py-5 flex items-center justify-between sidebar-item" style={{ borderBottom: "1px solid var(--border)" }}>
-          <h2 className="text-xl font-black tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.brand}</h2>
+          <img src="/logo.png" alt={t.brand} className="h-8 w-auto" />
           <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--muted)] hover:bg-black/5 hover:text-[var(--text)] transition-all text-xl">&times;</button>
         </div>
 

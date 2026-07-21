@@ -4,6 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PRIMETIME Check-in",
+  icons: { icon: "/logo.png" },
 };
 
 export const viewport: Viewport = {
