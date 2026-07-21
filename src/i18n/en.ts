@@ -70,6 +70,10 @@ const en = {
   deleteTeamDanger: 'Delete "{name}"',
   deleteTeamConfirm: "Delete this team and all its members & records? This cannot be undone.",
   copiedLink: "Copied {name}'s view link",
+  teamCreated: "Team created",
+  teamDeleted: "Team deleted",
+  memberAdded: "Member added",
+  memberDeleted: "Member deleted",
   // PIN
   adminPin: "Admin PIN",
   defaultPin: "Default PIN is 0000",

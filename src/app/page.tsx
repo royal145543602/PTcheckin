@@ -192,6 +192,7 @@ export default function HomePage() {
     });
     setNewTeamName("");
     await fetchTeams();
+    setToastMsg(t.teamCreated);
   }
 
   async function handleAddMember(name: string) {
@@ -202,11 +203,13 @@ export default function HomePage() {
       body: JSON.stringify({ name, isPreset: false }),
     });
     await Promise.all([fetchMembers(), fetchStatus()]);
+    setToastMsg(t.memberAdded);
   }
 
   async function handleDeleteMember(memberId: string) {
     await fetch(`/api/members/${memberId}`, { method: "DELETE" });
     await Promise.all([fetchMembers(), fetchStatus()]);
+    setToastMsg(t.memberDeleted);
   }
 
   function handleCardClick(memberId: string, name: string, currentStatus: "in" | "out" | "none") {
@@ -494,6 +497,7 @@ export default function HomePage() {
           setTeamId(null);
           await fetchTeams();
           setMembers([]);
+          setToastMsg(t.teamDeleted);
         }}
         undoStack={undoStack}
         onUndo={handleUndo}

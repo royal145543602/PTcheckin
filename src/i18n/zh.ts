@@ -72,6 +72,10 @@ const zh: Translations = {
   deleteTeamDanger: "刪除「{name}」",
   deleteTeamConfirm: "確定要刪除該團隊及其所有成員和記錄嗎？此操作不可撤銷。",
   copiedLink: "已複製 {name} 的查看連結",
+  teamCreated: "團隊已創建",
+  teamDeleted: "團隊已刪除",
+  memberAdded: "成員已新增",
+  memberDeleted: "成員已刪除",
   // PIN
   adminPin: "管理密碼",
   defaultPin: "默認密碼 0000",
