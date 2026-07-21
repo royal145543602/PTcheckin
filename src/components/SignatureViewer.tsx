@@ -12,7 +12,8 @@ export default function SignatureViewer({ strokes, width = 700, height = 400 }: 
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="w-full max-w-[400px] h-[200px] border rounded-xl bg-white"
+      className="w-full max-w-[400px] h-[200px] rounded-xl"
+      style={{ border: "1px solid rgba(0,128,51,0.1)", background: "rgba(255,255,255,0.6)", backdropFilter: "blur(8px)" }}
     >
       {strokes.map((stroke, i) => {
         if (stroke.points.length < 2) return null;
@@ -24,15 +25,15 @@ export default function SignatureViewer({ strokes, width = 700, height = 400 }: 
             key={i}
             d={d}
             fill="none"
-            stroke="black"
-            strokeWidth="2"
+            stroke="#008033"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         );
       })}
       {strokes.length === 0 && (
-        <text x="50%" y="50%" textAnchor="middle" className="text-sm fill-gray-400" dy=".3em">
+        <text x="50%" y="50%" textAnchor="middle" className="text-sm fill-[var(--dim)]" dy=".3em">
           无签名
         </text>
       )}

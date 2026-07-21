@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AnimatedModal from "@/components/AnimatedModal";
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -11,8 +12,6 @@ interface AddMemberModalProps {
 export default function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  if (!isOpen) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,27 +24,15 @@ export default function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-4">添加人员</h3>
-        <form onSubmit={handleSubmit}>
-          <input
-            className="w-full border rounded-xl px-4 py-3 text-lg mb-4"
-            placeholder="输入名字"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-          />
-          <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-200 py-3 rounded-xl text-lg font-medium">
-              取消
-            </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-lg font-medium disabled:opacity-50">
-              添加
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <AnimatedModal show={isOpen} onClose={onClose} cardCls="bg-white rounded-2xl p-6 w-full max-w-sm" variant="slide">
+      <h3 className="text-lg font-bold mb-4 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>添加人员</h3>
+      <form onSubmit={handleSubmit}>
+        <input className="input-pt text-lg mb-4 text-center" placeholder="输入名字" value={name} onChange={e => setName(e.target.value)} autoFocus />
+        <div className="flex gap-3">
+          <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl text-base font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">取消</button>
+          <button type="submit" disabled={loading} className="flex-1 bg-[var(--green)] text-white py-3 rounded-xl text-base font-bold disabled:opacity-50 hover:brightness-110 transition-all" style={{ boxShadow: "0 2px 12px rgba(0,232,92,0.3)" }}>添加</button>
+        </div>
+      </form>
+    </AnimatedModal>
   );
 }

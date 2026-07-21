@@ -1,17 +1,45 @@
-interface StatsBarProps {
-  present: number;
-  absent: number;
-  gone: number;
-  total: number;
+"use client";
+
+import { useRef, useState } from "react";
+import { gsap, useGSAP } from "@/lib/gsap";
+import { IconCheck, IconTime, IconExit, IconPerson } from "@/components/icons";
+
+interface StatsBarProps { present: number; absent: number; gone: number; total: number; }
+
+function AnimatedNumber({ value, color }: { value: number; color: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [prev, setPrev] = useState(value);
+  useGSAP(() => {
+    if (value === prev) return;
+    const el = ref.current; if (!el) return;
+    const start = prev, diff = value - start;
+    gsap.to(el, { duration: 0.6, ease: "gsap-quart-out", onUpdate() { el.textContent = String(Math.round(start + diff * this.progress())); } });
+    setPrev(value);
+  }, { dependencies: [value] });
+  return <span ref={ref} className="text-3xl font-black tracking-tight" style={{ fontFamily: "'Barlow Condensed','Noto Sans TC',sans-serif", color }}>{value}</span>;
 }
 
 export default function StatsBar({ present, absent, gone, total }: StatsBarProps) {
   return (
-    <div className="flex justify-around text-center py-3 bg-white border-t text-sm sm:text-base">
-      <div><span className="text-green-600 font-bold">{present}</span> 在场</div>
-      <div><span className="text-gray-400 font-bold">{absent}</span> 未到</div>
-      {gone > 0 && <div><span className="text-orange-500 font-bold">{gone}</span> 已走</div>}
-      <div><span className="font-bold">{total}</span> 共</div>
+    <div className="flex justify-around text-center py-5 px-4" style={{ background: "var(--dark)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex flex-col items-center gap-1.5">
+        <AnimatedNumber value={present} color="var(--green)" />
+        <span className="text-xs text-white/70 uppercase tracking-widest font-medium flex items-center gap-1"><IconCheck size={12} /> 在场</span>
+      </div>
+      <div className="flex flex-col items-center gap-1.5">
+        <AnimatedNumber value={absent} color="#fff" />
+        <span className="text-xs text-white/70 uppercase tracking-widest font-medium flex items-center gap-1"><IconTime size={12} /> 未到</span>
+      </div>
+      {gone > 0 && (
+        <div className="flex flex-col items-center gap-1.5">
+          <AnimatedNumber value={gone} color="#e83030" />
+          <span className="text-xs text-white/70 uppercase tracking-widest font-medium flex items-center gap-1"><IconExit size={12} /> 已走</span>
+        </div>
+      )}
+      <div className="flex flex-col items-center gap-1.5">
+        <AnimatedNumber value={total} color="rgba(255,255,255,0.8)" />
+        <span className="text-xs text-white/70 uppercase tracking-widest font-medium flex items-center gap-1"><IconPerson size={12} /> 总计</span>
+      </div>
     </div>
   );
 }

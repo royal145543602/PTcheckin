@@ -10,9 +10,9 @@ interface TeamSelectorProps {
 export default function TeamSelector({ teams, selectedId, onSelect, loading }: TeamSelectorProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-700">团队：</label>
+      <label className="text-xs font-semibold text-[var(--dim)] uppercase tracking-wider">团队</label>
       <select
-        className="border rounded-lg px-3 py-2 text-sm bg-white"
+        className="select-pt text-sm py-2"
         value={selectedId || ""}
         onChange={(e) => onSelect(e.target.value)}
         disabled={loading}

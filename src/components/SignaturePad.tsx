@@ -10,7 +10,7 @@ interface SignaturePadProps {
   height?: number;
 }
 
-export default function SignaturePad({ strokes, onChange, width = 800, height = 500 }: SignaturePadProps) {
+export default function SignaturePad({ strokes, onChange, width = 900, height = 600 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
   const currentStroke = useRef<{ x: number; y: number }[]>([]);
@@ -31,8 +31,31 @@ export default function SignaturePad({ strokes, onChange, width = 800, height = 
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
+
+    // Subtle grid for premium feel
+    ctx.strokeStyle = "rgba(0,128,51,0.04)";
+    ctx.lineWidth = 0.5;
+    const gridSize = 40;
+    for (let x = 0; x <= width; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+
+    // Signature line
+    ctx.strokeStyle = "rgba(0,128,51,0.15)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath();
+    ctx.moveTo(width * 0.15, height * 0.65);
+    ctx.lineTo(width * 0.85, height * 0.65);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw strokes
+    ctx.strokeStyle = "#008033";
+    ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
@@ -78,7 +101,8 @@ export default function SignaturePad({ strokes, onChange, width = 800, height = 
       ref={canvasRef}
       width={width}
       height={height}
-      className="w-full h-full min-h-[300px] border-2 border-gray-300 rounded-xl bg-white touch-none cursor-crosshair"
+      className="w-full h-full min-h-[280px] rounded-xl bg-[rgba(0,0,0,0.04)] touch-none cursor-crosshair"
+      style={{ border: "1px solid rgba(0,128,51,0.12)" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

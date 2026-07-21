@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { gsap, useGSAP } from "@/lib/gsap";
 import type { SignatureData } from "@/lib/types";
 
 interface HistoryRecord {
@@ -37,82 +38,107 @@ function formatTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function HistoryDayList({ days, from, to, onFromChange, onToChange, onViewSignature, showMemberName = true }: HistoryDayListProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(() => {
-    return new Set(days.slice(0, 7).map((d) => d.date));
-  });
+function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
+  day: DayGroup;
+  defaultOpen: boolean;
+  onViewSignature?: (name: string, sig: SignatureData, label: string) => void;
+  showMemberName: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  const toggle = (date: string) => {
-    const next = new Set(expanded);
-    if (next.has(date)) next.delete(date);
-    else next.add(date);
-    setExpanded(next);
-  };
+  useGSAP(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    gsap.killTweensOf(el);
+    if (isOpen) {
+      gsap.fromTo(el, { display: "block", autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: "expo.out" });
+    } else {
+      gsap.to(el, { autoAlpha: 0, duration: 0.15, ease: "power2.in" });
+    }
+  }, { dependencies: [isOpen] });
+
+  const inCount = day.records.filter((r) => r.type === "in").length;
+  const outCount = day.records.filter((r) => r.type === "out").length;
 
   return (
+    <div className="mb-2 rounded-lg border border-[var(--border)] overflow-hidden" style={{ background: "var(--bg-card)" }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/[0.02] transition-colors text-left"
+      >
+        <span className="font-medium text-sm text-[var(--text)]/85 font-display tracking-wide" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>
+          {formatDate(day.date)}
+        </span>
+        <span className="text-xs text-[var(--muted)] flex items-center gap-2">
+          <span className="text-[var(--green)]">签到{inCount}</span>
+          <span className="text-red-400">签退{outCount}</span>
+          <span className="ml-1 text-[var(--dim)] transition-transform duration-300" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0)" }}>
+            ▼
+          </span>
+        </span>
+      </button>
+
+      <div ref={contentRef} style={{ height: 0, overflow: "hidden", transformOrigin: "top" }}>
+        <div className="border-t border-[var(--border)] px-4 py-2 space-y-1">
+          {day.records.map((r) => (
+            <div key={r.id} className="flex items-center justify-between py-1.5 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.type === "in" ? "bg-[rgba(0,128,51,0.1)] text-[var(--green)]" : "bg-[rgba(232,48,48,0.1)] text-red-400"}`}>
+                  {r.type === "in" ? "签到" : "签退"}
+                </span>
+                {showMemberName && <span className="font-medium text-[var(--text)]/80">{r.memberName}</span>}
+                <span className="text-[var(--dim)] text-xs">{formatTime(r.time)}</span>
+              </div>
+              {r.signature && onViewSignature && (
+                <button
+                  onClick={() => onViewSignature(r.memberName, r.signature!, r.type === "in" ? "签到签名" : "签退签名")}
+                  className="text-xs text-[var(--green)] hover:underline"
+                >
+                  查看签名
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function HistoryDayList({ days, from, to, onFromChange, onToChange, onViewSignature, showMemberName = true }: HistoryDayListProps) {
+  return (
     <div>
-      <div className="flex gap-2 items-center mb-3">
+      {/* Date picker */}
+      <div className="flex gap-2 items-center mb-4">
         <input
           type="date"
           value={from}
           onChange={(e) => onFromChange(e.target.value)}
-          className="border rounded-lg px-2 py-1 text-sm"
+          className="input-pt text-sm py-2 px-3 w-auto"
         />
-        <span className="text-sm text-gray-500">至</span>
+        <span className="text-xs text-[var(--muted)]">至</span>
         <input
           type="date"
           value={to}
           onChange={(e) => onToChange(e.target.value)}
-          className="border rounded-lg px-2 py-1 text-sm"
+          className="input-pt text-sm py-2 px-3 w-auto"
         />
       </div>
 
-      {days.length === 0 && <p className="text-gray-400 text-sm">暂无记录</p>}
+      {days.length === 0 && (
+        <p className="text-[var(--muted)] text-sm py-8 text-center">暂无记录</p>
+      )}
 
-      {days.map((day) => {
-        const isOpen = expanded.has(day.date);
-        const inCount = day.records.filter((r) => r.type === "in").length;
-        const outCount = day.records.filter((r) => r.type === "out").length;
-
-        return (
-          <div key={day.date} className="mb-2 border rounded-lg bg-white">
-            <button
-              onClick={() => toggle(day.date)}
-              className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-50 rounded-lg text-left"
-            >
-              <span className="font-medium text-sm">{formatDate(day.date)}</span>
-              <span className="text-xs text-gray-500">
-                签到{inCount} / 签退{outCount}
-                <span className="ml-2">{isOpen ? "▲" : "▼"}</span>
-              </span>
-            </button>
-
-            {isOpen && (
-              <div className="border-t px-4 py-2 space-y-1">
-                {day.records.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between py-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className={r.type === "in" ? "text-green-600" : "text-red-500"}>
-                        {r.type === "in" ? "签到" : "签退"}
-                      </span>
-                      {showMemberName && <span className="font-medium">{r.memberName}</span>}
-                      <span className="text-gray-400">{formatTime(r.time)}</span>
-                    </div>
-                    {r.signature && onViewSignature && (
-                      <button
-                        onClick={() => onViewSignature(r.memberName, r.signature!, r.type === "in" ? "签到签名" : "签退签名")}
-                        className="text-xs text-blue-600 underline"
-                      >
-                        查看签名
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {days.map((day, i) => (
+        <DayCard
+          key={day.date}
+          day={day}
+          defaultOpen={i < 7}
+          onViewSignature={onViewSignature}
+          showMemberName={showMemberName}
+        />
+      ))}
     </div>
   );
 }

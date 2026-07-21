@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import { gsap, useGSAP } from "@/lib/gsap";
 import StatsBar from "@/components/StatsBar";
 import SignatureViewer from "@/components/SignatureViewer";
 import HistoryDayList from "@/components/HistoryDayList";
+import AnimatedModal from "@/components/AnimatedModal";
+import { IconRefresh, IconSignature, IconHistory } from "@/components/icons";
+import type { SignatureData } from "@/lib/types";
 
 interface MemberStatus {
   id: string; name: string; status: "in" | "out" | "none";
   lastCheckIn: string | null; lastCheckOut: string | null;
-  lastSignatureIn?: import("@/lib/types").SignatureData;
-  lastSignatureOut?: import("@/lib/types").SignatureData;
+  lastSignatureIn?: SignatureData;
+  lastSignatureOut?: SignatureData;
 }
 interface TeamStatus {
   team: { id: string; name: string; createdAt: string };
@@ -29,7 +33,17 @@ export default function ViewPage() {
     return d.toISOString().split("T")[0];
   });
   const [hTo, setHTo] = useState(() => new Date().toISOString().split("T")[0]);
-  const [sigViewer, setSigViewer] = useState<{ name: string; strokes: import("@/lib/types").SignatureData; label: string } | null>(null);
+  const [sigViewer, setSigViewer] = useState<{ name: string; strokes: SignatureData; label: string } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Stagger entrance for member list
+  useGSAP(() => {
+    if (!listRef.current || !data?.members.length) return;
+    gsap.fromTo(".view-member",
+      { autoAlpha: 0, x: -12 },
+      { autoAlpha: 1, x: 0, duration: 0.3, stagger: { each: 0.04, from: "start" }, ease: "gsap-quart-out", clearProps: "all" }
+    );
+  }, { dependencies: [data?.members.length], scope: listRef });
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -56,7 +70,11 @@ export default function ViewPage() {
   useEffect(() => { fetchMemberHistory(); }, [fetchMemberHistory]);
 
   if (!data) {
-    return <main className="flex items-center justify-center min-h-screen"><p className="text-gray-400">加载中...</p></main>;
+    return (
+      <main className="flex items-center justify-center min-h-screen relative z-10" style={{ background: "var(--bg)" }}>
+        <p className="text-[var(--muted)] text-lg">加载中...</p>
+      </main>
+    );
   }
 
   const formatTime = (iso: string | null) => {
@@ -66,43 +84,49 @@ export default function ViewPage() {
   };
 
   const statusBadge = (status: "in" | "out" | "none", checkIn: string | null, checkOut: string | null) => {
-    if (status === "in") return { color: "bg-green-500", text: `签到 ${formatTime(checkIn)}` };
-    if (status === "out") return { color: "bg-red-400", text: `已走 ${formatTime(checkOut)}` };
-    return { color: "bg-gray-300", text: "未到" };
+    if (status === "in") return { dot: "bg-[var(--green)] shadow-[0_0_8px_rgba(0,128,51,0.4)]", text: `签到 ${formatTime(checkIn)}`, textColor: "text-[var(--green)]" };
+    if (status === "out") return { dot: "bg-orange-400", text: `已走 ${formatTime(checkOut)}`, textColor: "text-orange-400" };
+    return { dot: "bg-[var(--dim)]", text: "未到", textColor: "text-[var(--dim)]" };
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-gray-50">
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">{data.team.name}</h1>
-        <button onClick={fetchStatus} className="text-sm text-blue-600 underline">刷新</button>
+    <main className="min-h-screen flex flex-col relative z-10" style={{ background: "var(--bg)" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--border)]" style={{ background: "var(--bg-card)" }}>
+        <h1 className="text-xl sm:text-2xl font-bold font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>
+          {data.team.name}
+        </h1>
+        <button onClick={fetchStatus} className="text-sm text-[var(--green)] hover:underline font-medium flex items-center gap-1"><IconRefresh size={14} /> 刷新</button>
       </div>
 
-      {lastUpdate && <div className="text-center text-xs text-gray-400 py-1">最后更新: {lastUpdate}</div>}
+      {lastUpdate && (
+        <div className="text-center text-xs text-[var(--dim)] py-1.5">最后更新: {lastUpdate}</div>
+      )}
 
-      <div className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-2">
+      {/* Member list */}
+      <div ref={listRef} className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-2">
         {data.members.map((m) => {
           const badge = statusBadge(m.status, m.lastCheckIn, m.lastCheckOut);
           return (
-            <div key={m.id} className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border">
+            <div key={m.id} className="view-member flex items-center justify-between rounded-xl px-4 py-3.5 border border-[var(--border)] transition-all hover:border-[rgba(0,128,51,0.15)]" style={{ background: "var(--bg-card)" }}>
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${badge.color}`} />
-                <span className="text-lg font-medium">{m.name}</span>
+                <div className={`w-3 h-3 rounded-full ${badge.dot} ${m.status === "in" ? "animate-pulse" : ""}`} />
+                <span className="text-lg font-medium text-[var(--text)]/90">{m.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">{badge.text}</span>
+                <span className={`text-sm ${badge.textColor}`}>{badge.text}</span>
                 {m.lastSignatureIn && (
-                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureIn!, label: "签到签名" })} className="text-xs text-blue-600 underline">
-                    查看签名
+                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureIn!, label: "签到签名" })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
+                    <IconSignature size={12} /> 签名
                   </button>
                 )}
                 {m.lastSignatureOut && (
-                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureOut!, label: "签退签名" })} className="text-xs text-blue-600 underline">
-                    查看签退
+                  <button onClick={() => setSigViewer({ name: m.name, strokes: m.lastSignatureOut!, label: "签退签名" })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
+                    <IconSignature size={12} /> 签退
                   </button>
                 )}
-                <button onClick={() => setHistoryModal({ memberId: m.id, name: m.name })} className="text-xs text-blue-600 underline">
-                  查看历史
+                <button onClick={() => setHistoryModal({ memberId: m.id, name: m.name })} className="text-xs text-[var(--green)] hover:underline flex items-center gap-0.5">
+                  <IconHistory size={12} /> 历史
                 </button>
               </div>
             </div>
@@ -112,35 +136,29 @@ export default function ViewPage() {
 
       <StatsBar {...data.stats} />
 
-      {sigViewer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSigViewer(null)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-3">{sigViewer.name} - {sigViewer.label}</h3>
-            <SignatureViewer strokes={sigViewer.strokes} />
-            <button onClick={() => setSigViewer(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">
-              关闭
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Signature viewer modal */}
+      <AnimatedModal show={sigViewer !== null} onClose={() => setSigViewer(null)}>
+        <h3 className="text-lg font-bold mb-3 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{sigViewer?.name} - {sigViewer?.label}</h3>
+        <SignatureViewer strokes={sigViewer?.strokes || []} />
+        <button onClick={() => setSigViewer(null)} className="mt-4 w-full py-2 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">关闭</button>
+      </AnimatedModal>
 
-      {historyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setHistoryModal(null)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-3">{historyModal.name} - 签到历史</h3>
-            <HistoryDayList
-              days={memberHistory}
-              from={hFrom}
-              to={hTo}
-              onFromChange={setHFrom}
-              onToChange={setHTo}
-              onViewSignature={(name, strokes, label) => setSigViewer({ name, strokes, label })}
-              showMemberName={false}
-            />
-            <button onClick={() => setHistoryModal(null)} className="mt-4 w-full bg-gray-200 py-2 rounded-xl text-sm font-medium">关闭</button>
-          </div>
+      {/* History modal */}
+      <AnimatedModal show={historyModal !== null} onClose={() => setHistoryModal(null)}>
+        <h3 className="text-lg font-bold mb-3 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{historyModal?.name} - 签到历史</h3>
+        <div className="max-h-[60vh] overflow-y-auto">
+          <HistoryDayList
+            days={memberHistory}
+            from={hFrom}
+            to={hTo}
+            onFromChange={setHFrom}
+            onToChange={setHTo}
+            onViewSignature={(name, strokes, label) => setSigViewer({ name, strokes, label })}
+            showMemberName={false}
+          />
         </div>
-      )}
+        <button onClick={() => setHistoryModal(null)} className="mt-4 w-full py-2 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-all">关闭</button>
+      </AnimatedModal>
     </main>
   );
 }
