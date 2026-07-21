@@ -198,6 +198,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 
