@@ -357,23 +357,23 @@ export default function HomePage() {
           onClick={() => setTab("checkin")}
           className={`px-6 py-2 rounded-full text-sm font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 ${tab === "checkin" ? "bg-[#00e85c] text-black" : "text-white/50 hover:text-white"}`}
           style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}
-        ><IconCheckIn size={16} /> {t.checkIn}</button>
+        ><IconCheckIn size={16} /> <span className="hidden sm:inline">{t.checkIn}</span></button>
         <button
           onClick={() => setTab("history")}
           className={`px-6 py-2 rounded-full text-sm font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 ${tab === "history" ? "bg-[#00e85c] text-black" : "text-white/50 hover:text-white"}`}
           style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}
-        ><IconHistory size={16} /> {t.history}</button>
+        ><IconHistory size={16} /> <span className="hidden sm:inline">{t.history}</span></button>
         <div className="flex-1" />
         {teamId && (
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => handleUndo(0)} disabled={undoStack.length === 0} className="text-xs px-2 py-1.5 rounded-full text-white/60 hover:text-[#00e85c] border border-white/15 hover:border-[#00e85c] transition-all flex items-center gap-1 disabled:opacity-20 disabled:cursor-not-allowed">
-              <IconUndo size={13} /> {t.undo}
+          <div className="flex items-center gap-1">
+            <button onClick={() => handleUndo(0)} disabled={undoStack.length === 0} className="text-xs px-1.5 py-1.5 rounded-full text-white/60 hover:text-[#00e85c] border border-white/15 hover:border-[#00e85c] transition-all flex items-center gap-0.5 disabled:opacity-20 disabled:cursor-not-allowed">
+              <IconUndo size={13} />
             </button>
             <button
               onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }}
-              className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1 ${batchMode ? "bg-[#00e85c] text-black" : "text-white/60 hover:text-white border border-white/20"}`}
+              className={`text-xs font-bold px-1.5 py-1.5 rounded-full transition-all flex items-center gap-0.5 ${batchMode ? "bg-[#00e85c] text-black" : "text-white/60 hover:text-white border border-white/20"}`}
             >
-              <IconBatch size={13} /> {batchMode ? t.done : t.batch}
+              <IconBatch size={13} />
             </button>
           </div>
         )}
