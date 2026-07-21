@@ -63,7 +63,7 @@ const en = {
   delete: "Delete",
   quickLinks: "Quick Links",
   copyViewLink: "Copy View Link",
-  dangerZone: "Danger Zone",
+  specialActions: "Actions",
   locked: "Locked",
   unlocked: "Unlocked",
   resetToday: "Reset today's records",

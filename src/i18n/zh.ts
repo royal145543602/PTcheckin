@@ -65,7 +65,7 @@ const zh: Translations = {
   delete: "刪除",
   quickLinks: "快捷連結",
   copyViewLink: "複製家長查看連結",
-  dangerZone: "危險操作",
+  specialActions: "特殊操作",
   locked: "需密碼",
   unlocked: "已解鎖",
   resetToday: "重置今日所有簽到",
