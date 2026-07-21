@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = getDb();
-  const result = db.prepare("DELETE FROM records WHERE id = ?").run(id);
-  if (result.changes === 0) return NextResponse.json({ error: "记录不存在" }, { status: 404 });
+  const { error } = await db.from("records").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }
