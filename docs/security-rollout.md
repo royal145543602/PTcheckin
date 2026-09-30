@@ -17,5 +17,6 @@ The public `/kiosk/<team-id>` and `/view/<team-id>` links remain available witho
 2. Apply `lock-down-public-data.sql` in the same PTcheckin project. This enables RLS and removes direct Data API grants for `anon` and `authenticated`. The server's secret key continues to access the tables through the app's API routes.
 3. Confirm the public kiosk still loads and can check in, the admin page can manage records after password entry, and a request to the Supabase Data API using only the old anon key cannot read or modify the three tables.
 4. Compare the team, member, and record row counts with the pre-cutover snapshot. Do not disable the old anon key until every consumer has been checked for compatibility.
+5. Add a Cloudflare rate limit for `POST /api/admin/session`. The app also limits repeated attempts in memory, but Worker instances do not share that memory.
 
 Never apply the lock-down SQL before the new Worker and its secrets are live: the current website uses the anon key and would lose database access.
