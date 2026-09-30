@@ -1,9 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+let db: SupabaseClient<any, "public", any> | undefined;
 
-export const db = createClient(supabaseUrl, supabaseKey);
+export function getDb() {
+  if (db) return db;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  // Only API routes call this. Keep the key in a server-side secret,
+  // never in NEXT_PUBLIC_* or a committed Wrangler vars block.
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY;
+  if (!supabaseUrl || !supabaseKey) throw new Error("Supabase server credentials are not configured");
+  db = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  return db;
+}
 
 // Table creation SQL (run once in Supabase SQL Editor):
 /*

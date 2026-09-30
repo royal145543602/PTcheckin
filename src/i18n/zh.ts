@@ -78,7 +78,7 @@ const zh: Translations = {
   memberDeleted: "成員已刪除",
   // PIN
   adminPin: "管理密碼",
-  defaultPin: "默認密碼 0000",
+  defaultPin: "請輸入管理密碼",
   submitPin: "確認",
   // Member card
   tapToSign: "點擊簽到",

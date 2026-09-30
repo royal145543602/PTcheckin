@@ -33,6 +33,10 @@ interface TeamStatus {
 export default function HomePage() {
   const { t, lang, setLang } = useT();
   const [teams, setTeams] = useState<Team[]>([]);
+  const [adminReady, setAdminReady] = useState(false);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [adminPin, setAdminPin] = useState("");
+  const [adminError, setAdminError] = useState("");
   const [teamId, setTeamId] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [archivedMembers, setArchivedMembers] = useState<Member[]>([]);
@@ -145,7 +149,40 @@ export default function HomePage() {
     }
   }, []);
 
-  useEffect(() => { fetchTeams(); }, []);
+  useEffect(() => {
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((session) => setAdminUnlocked(Boolean(session.unlocked)))
+      .catch(() => setAdminUnlocked(false))
+      .finally(() => setAdminReady(true));
+  }, []);
+  useEffect(() => { if (adminUnlocked) void fetchTeams(); }, [adminUnlocked, fetchTeams]);
+  useEffect(() => {
+    if (!adminUnlocked) return;
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/admin/session", { cache: "no-store" });
+        const session = await response.json();
+        if (!session.unlocked) setAdminUnlocked(false);
+      } catch { setAdminUnlocked(false); }
+    };
+    const timer = window.setInterval(checkSession, 15000);
+    return () => window.clearInterval(timer);
+  }, [adminUnlocked]);
+
+  async function unlockAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    const response = await fetch("/api/admin/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: adminPin }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setAdminError(result.error || "验证失败"); return; }
+    setAdminPin("");
+    setAdminError("");
+    setAdminUnlocked(true);
+  }
   useEffect(() => { undoRef.current = undoStack; }, [undoStack]);
 
   useEffect(() => {
@@ -352,6 +389,19 @@ export default function HomePage() {
   const viewUrl = teamId ? `${window.location.origin}/view/${teamId}` : "";
   const teamName = status?.team.name || teams.find(t => t.id === teamId)?.name || "";
 
+  if (!adminReady) return <main className="min-h-screen flex items-center justify-center" />;
+  if (!adminUnlocked) return (
+    <main className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+      <form onSubmit={unlockAdmin} className="w-full max-w-sm rounded-2xl p-7 space-y-4" style={{ background: "var(--bg-card)" }}>
+        <h1 className="text-2xl font-bold text-[var(--text)]">管理員登入</h1>
+        <p className="text-sm text-[var(--muted)]">管理操作解鎖後 5 分鐘內有效。公開簽到連結無需密碼。</p>
+        <input type="password" autoComplete="current-password" value={adminPin} onChange={(e) => setAdminPin(e.target.value)} className="input-pt w-full" placeholder="管理密碼" required />
+        {adminError && <p role="alert" className="text-sm text-red-500">{adminError}</p>}
+        <button type="submit" className="w-full rounded-xl bg-[var(--green)] py-3 font-bold text-black">解鎖管理頁</button>
+      </form>
+    </main>
+  );
+
   return (
     <main className="min-h-screen flex flex-col relative" style={{ background: "var(--bg)", zIndex: 1, maxWidth: "100vw", overflowX: "hidden" }}>
       {/* ── Top Bar ── */}
@@ -509,7 +559,12 @@ export default function HomePage() {
           await fetchTeams();
         }}
         onDeleteTeam={async (id) => {
-          await fetch(`/api/teams/${id}`, { method: "DELETE" });
+          const response = await fetch(`/api/teams/${id}`, { method: "DELETE" });
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            setToastMsg(result.error || t.opFailed);
+            return;
+          }
           setTeamId(null);
           await fetchTeams();
           setMembers([]);

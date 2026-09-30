@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const from = searchParams.get("from") || new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0];
   const to = searchParams.get("to") || now.toISOString().split("T")[0];
 
-  const { data: records, error } = await db.from("records")
+  const { data: records, error } = await getDb().from("records")
     .select("id, type, time, signature, members!inner(name)")
     .eq("member_id", id)
     .gte("time", `${from}T00:00:00.000Z`)

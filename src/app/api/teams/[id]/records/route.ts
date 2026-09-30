@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
   const { id } = await params;
   const { searchParams } = new URL(request.url);
   const now = new Date();
   const from = searchParams.get("from") || new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0];
   const to = searchParams.get("to") || now.toISOString().split("T")[0];
 
-  const { data: records, error } = await db.from("records")
+  const { data: records, error } = await getDb().from("records")
     .select("id, type, time, signature, members(name, deleted_at)")
     .eq("team_id", id)
     .gte("time", `${from}T00:00:00.000Z`)

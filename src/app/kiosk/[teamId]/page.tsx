@@ -78,9 +78,12 @@ export default function KioskPage() {
 
   // Load data
   const fetchTeams = useCallback(async () => {
-    const res = await fetch("/api/teams");
-    setTeams(await res.json());
-  }, []);
+    const res = await fetch(`/api/teams/${teamId}/status`);
+    if (res.ok) {
+      const result = await res.json();
+      setTeams([result.team]);
+    }
+  }, [teamId]);
 
   useEffect(() => { fetchTeams(); }, []);
 

@@ -48,26 +48,14 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Member | null>(null);
-  const [pinAuthed, setPinAuthed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const t = localStorage.getItem("pinAuthedUntil");
-    return t ? Number(t) > Date.now() : false;
-  });
+  const [pinAuthed, setPinAuthed] = useState(false);
 
   useEffect(() => {
-    if (!pinAuthed) return;
-    const remaining = Number(localStorage.getItem("pinAuthedUntil") || 0) - Date.now();
-    if (remaining <= 0) {
-      localStorage.removeItem("pinAuthedUntil");
-      setPinAuthed(false);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      localStorage.removeItem("pinAuthedUntil");
-      setPinAuthed(false);
-    }, remaining);
-    return () => window.clearTimeout(timer);
-  }, [pinAuthed]);
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((session) => setPinAuthed(Boolean(session.unlocked)))
+      .catch(() => setPinAuthed(false));
+  }, []);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -90,23 +78,37 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
     }
   }, [isOpen]);
 
-  async function handleAdd(e: React.FormEvent) { e.preventDefault(); if (!newName.trim()) return; await onAddMember(newName.trim()); setNewName(""); }
-  async function handleCreateTeam(e: React.FormEvent) { e.preventDefault(); if (!newTeamName.trim()) return; await onCreateTeam(newTeamName.trim()); setNewTeamName(""); }
-  async function handleRenameSubmit(e: React.FormEvent) { e.preventDefault(); if (!renameValue.trim() || !selectedTeamId) return; await onRenameTeam(selectedTeamId, renameValue.trim()); setRenaming(false); }
+  async function handleAdd(e: React.FormEvent) { e.preventDefault(); if (!newName.trim()) return; void checkPin(() => { void onAddMember(newName.trim()); setNewName(""); }); }
+  async function handleCreateTeam(e: React.FormEvent) { e.preventDefault(); if (!newTeamName.trim()) return; void checkPin(() => { void onCreateTeam(newTeamName.trim()); setNewTeamName(""); }); }
+  async function handleRenameSubmit(e: React.FormEvent) { e.preventDefault(); if (!renameValue.trim() || !selectedTeamId) return; void checkPin(() => { void onRenameTeam(selectedTeamId, renameValue.trim()); setRenaming(false); }); }
   async function handleCopy() { await navigator.clipboard.writeText(viewUrl); setToastMsg(t.copiedLink.replace("{name}", selectedTeam?.name || "")); }
 
-  function checkPin(action: () => void) {
-    const unlockedUntil = Number(localStorage.getItem("pinAuthedUntil") || 0);
-    if (unlockedUntil > Date.now()) { action(); return; }
-    localStorage.removeItem("pinAuthedUntil");
+  async function checkPin(action: () => void) {
+    try {
+      const response = await fetch("/api/admin/session", { cache: "no-store" });
+      const session = await response.json();
+      if (session.unlocked) { setPinAuthed(true); action(); return; }
+    } catch { /* Show the password prompt when the session cannot be verified. */ }
     setPinAuthed(false);
     setPinModal({ action });
     setPinInput("");
   }
-  function handlePinSubmit(e: React.FormEvent) {
+  async function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const stored = localStorage.getItem("adminPin") || "0000";
-    if (pinInput === stored) { localStorage.setItem("pinAuthedUntil", String(Date.now() + 5 * 60 * 1000)); setPinAuthed(true); setPinModal(null); if (pinModal) pinModal.action(); }
+    const response = await fetch("/api/admin/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: pinInput }),
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      setToastMsg(result.error || "验证失败");
+      return;
+    }
+    setPinAuthed(true);
+    setPinInput("");
+    setPinModal(null);
+    if (pinModal) pinModal.action();
   }
 
   function handleDeleteConfirm() {
@@ -263,7 +265,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
       {/* PIN modal */}
       <AnimatedModal show={pinModal !== null} onClose={() => setPinModal(null)}>
         <h3 className="text-lg font-bold mb-1 font-display tracking-wider" style={{ fontFamily: "'Barlow Condensed', 'Noto Sans TC', sans-serif" }}>{t.adminPin}</h3>
-        <p className="text-xs text-[var(--muted)] mb-4">{t.defaultPin}</p>
+        <p className="text-xs text-[var(--muted)] mb-4">{lang === "zh" ? "解鎖後 5 分鐘內有效" : "Unlocked for 5 minutes"}</p>
         <form onSubmit={handlePinSubmit}>
           <input type="password" className="input-pt text-lg text-center mb-4" placeholder="PIN" value={pinInput} onChange={e => setPinInput(e.target.value)} autoFocus />
           <button type="submit" className="w-full bg-[var(--green)] text-white py-3 rounded-xl text-base font-bold hover:brightness-110 transition-all" style={{ boxShadow: "0 2px 12px rgba(0,232,92,0.3)" }}>{t.submitPin}</button>

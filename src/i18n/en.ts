@@ -76,7 +76,7 @@ const en = {
   memberDeleted: "Member deleted",
   // PIN
   adminPin: "Admin PIN",
-  defaultPin: "Default PIN is 0000",
+  defaultPin: "Enter the admin password",
   submitPin: "Confirm",
   // Member card
   tapToSign: "Tap to sign",
