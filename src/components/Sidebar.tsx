@@ -19,8 +19,10 @@ interface SidebarProps {
   selectedTeamId: string | null;
   onSelectTeam: (id: string) => void;
   members: Member[];
+  archivedMembers: Member[];
   onAddMember: (name: string) => Promise<void>;
   onDeleteMember: (id: string) => Promise<void>;
+  onRestoreMember: (id: string) => Promise<void>;
   onCreateTeam: (name: string) => Promise<void>;
   onRenameTeam: (id: string, name: string) => Promise<void>;
   onDeleteTeam: (id: string) => Promise<void>;
@@ -35,7 +37,7 @@ interface SidebarProps {
 
 const hdrStyle = { color: "rgba(0,0,0,0.45)", textShadow: "0 1px 0 rgba(255,255,255,0.8)" };
 
-export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, onAddMember, onDeleteMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, batchMode, onToggleBatch, onAddMemberClick, viewUrl, onResetToday }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSelectTeam, members, archivedMembers, onAddMember, onDeleteMember, onRestoreMember, onCreateTeam, onRenameTeam, onDeleteTeam, undoStack, onUndo, batchMode, onToggleBatch, onAddMemberClick, viewUrl, onResetToday }: SidebarProps) {
   const { t, lang, setLang } = useT();
   const [newName, setNewName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
@@ -45,6 +47,7 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
   const [pinInput, setPinInput] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<Member | null>(null);
   const [pinAuthed, setPinAuthed] = useState(() => {
     if (typeof window === "undefined") return false;
     const t = localStorage.getItem("pinAuthedUntil");
@@ -155,10 +158,23 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
                 {members.map(m => (
                   <li key={m.id} className="flex items-center justify-between py-2.5 px-3.5 rounded-xl hover:bg-black/[0.03] transition-colors group">
                     <span className="text-[15px] font-medium text-[var(--text)]/85">{m.name}</span>
-                    <button onClick={() => checkPin(() => onDeleteMember(m.id))} className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-500 transition-all">{t.delete}</button>
+                    <button onClick={() => checkPin(() => setArchiveTarget(m))} className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-500 transition-all">{t.delete}</button>
                   </li>
                 ))}
               </ul>
+              {archivedMembers.length > 0 && (
+                <details className="mt-3 text-sm text-[var(--muted)]">
+                  <summary className="cursor-pointer">{lang === "zh" ? `已歸檔成員 (${archivedMembers.length})` : `Archived members (${archivedMembers.length})`}</summary>
+                  <ul className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                    {archivedMembers.map(m => (
+                      <li key={m.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-black/[0.03]">
+                        <span>{m.name}</span>
+                        <button onClick={() => checkPin(() => onRestoreMember(m.id))} className="text-[var(--green)] hover:underline">{lang === "zh" ? "恢復" : "Restore"}</button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
 
@@ -201,6 +217,16 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
       {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
 
       {/* Delete confirm */}
+      {archiveTarget && (
+        <ConfirmModal
+          title={lang === "zh" ? "歸檔成員" : "Archive member"}
+          message={lang === "zh" ? `將 ${archiveTarget.name} 從當前名單移除？簽到歷史和簽名會保留，可隨時恢復。` : `Remove ${archiveTarget.name} from the active list? Check-in history and signatures remain available, and you can restore this member.`}
+          confirmLabel={lang === "zh" ? "歸檔" : "Archive"}
+          danger
+          onConfirm={() => { const id = archiveTarget.id; setArchiveTarget(null); void onDeleteMember(id); }}
+          onCancel={() => setArchiveTarget(null)}
+        />
+      )}
       {deleteConfirm && (
         <ConfirmModal
           title={t.deleteTeam}

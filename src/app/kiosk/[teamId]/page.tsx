@@ -31,6 +31,7 @@ export default function KioskPage() {
   const { t } = useT();
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [archivedMembers, setArchivedMembers] = useState<Member[]>([]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [timeStr, setTimeStr] = useState("");
@@ -84,8 +85,12 @@ export default function KioskPage() {
   useEffect(() => { fetchTeams(); }, []);
 
   const fetchMembers = useCallback(async () => {
-    const res = await fetch(`/api/teams/${teamId}/members`);
-    setMembers(await res.json());
+    const [res, archivedRes] = await Promise.all([
+      fetch(`/api/teams/${teamId}/members`),
+      fetch(`/api/teams/${teamId}/members?archived=1`),
+    ]);
+    if (res.ok) setMembers(await res.json());
+    if (archivedRes.ok) setArchivedMembers(await archivedRes.json());
   }, [teamId]);
 
   useEffect(() => { fetchMembers(); }, [teamId]);
@@ -111,7 +116,14 @@ export default function KioskPage() {
   }
 
   async function handleDeleteMember(memberId: string) {
-    await fetch(`/api/members/${memberId}`, { method: "DELETE" });
+    const res = await fetch(`/api/members/${memberId}`, { method: "DELETE" });
+    if (!res.ok) return;
+    await Promise.all([fetchMembers(), fetchStatus()]);
+  }
+
+  async function handleRestoreMember(memberId: string) {
+    const res = await fetch(`/api/members/${memberId}`, { method: "PATCH" });
+    if (!res.ok) return;
     await Promise.all([fetchMembers(), fetchStatus()]);
   }
 
@@ -225,8 +237,10 @@ export default function KioskPage() {
         selectedTeamId={teamId as string}
         onSelectTeam={() => {}}
         members={members}
+        archivedMembers={archivedMembers}
         onAddMember={handleAddMember}
         onDeleteMember={handleDeleteMember}
+        onRestoreMember={handleRestoreMember}
         onCreateTeam={async () => {}}
         onRenameTeam={async () => {}}
         onDeleteTeam={async () => {}}

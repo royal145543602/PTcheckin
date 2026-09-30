@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const to = searchParams.get("to") || now.toISOString().split("T")[0];
 
   const { data: records, error } = await db.from("records")
-    .select("id, type, time, signature, members!inner(name)")
+    .select("id, type, time, signature, members(name, deleted_at)")
     .eq("team_id", id)
     .gte("time", `${from}T00:00:00.000Z`)
     .lte("time", `${to}T23:59:59.999Z`)
@@ -23,6 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!dayMap.has(date)) dayMap.set(date, []);
     dayMap.get(date)!.push({
       id: r.id, memberName: (r as any).members?.name || "",
+      archived: Boolean((r as any).members?.deleted_at),
       type: r.type, time: r.time,
       signature: (() => { try { return r.signature ? JSON.parse(r.signature) : null; } catch { return null; } })(),
     });

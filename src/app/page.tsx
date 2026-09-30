@@ -35,6 +35,7 @@ export default function HomePage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [archivedMembers, setArchivedMembers] = useState<Member[]>([]);
 
   const [tab, setTab] = useState<"checkin" | "history">("checkin");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -155,8 +156,12 @@ export default function HomePage() {
 
   const fetchMembers = useCallback(async () => {
     if (!teamId) return;
-    const res = await fetch(`/api/teams/${teamId}/members`);
-    setMembers(await res.json());
+    const [res, archivedRes] = await Promise.all([
+      fetch(`/api/teams/${teamId}/members`),
+      fetch(`/api/teams/${teamId}/members?archived=1`),
+    ]);
+    if (res.ok) setMembers(await res.json());
+    if (archivedRes.ok) setArchivedMembers(await archivedRes.json());
   }, [teamId]);
 
   useEffect(() => { fetchMembers(); }, [teamId]);
@@ -207,9 +212,18 @@ export default function HomePage() {
   }
 
   async function handleDeleteMember(memberId: string) {
-    await fetch(`/api/members/${memberId}`, { method: "DELETE" });
+    const res = await fetch(`/api/members/${memberId}`, { method: "DELETE" });
+    if (!res.ok) { setToastMsg((await res.json()).error || "归档失败"); return; }
     await Promise.all([fetchMembers(), fetchStatus()]);
-    setToastMsg(t.memberDeleted);
+    if (tab === "history") await fetchHistory();
+    setToastMsg(lang === "zh" ? "成員已歸檔，歷史紀錄保留" : "Member archived; history preserved");
+  }
+
+  async function handleRestoreMember(memberId: string) {
+    const res = await fetch(`/api/members/${memberId}`, { method: "PATCH" });
+    if (!res.ok) { setToastMsg((await res.json()).error || "恢复失败"); return; }
+    await Promise.all([fetchMembers(), fetchStatus()]);
+    setToastMsg(lang === "zh" ? "成員已恢復" : "Member restored");
   }
 
   function handleCardClick(memberId: string, name: string, currentStatus: "in" | "out" | "none") {
@@ -482,8 +496,10 @@ export default function HomePage() {
         selectedTeamId={teamId}
         onSelectTeam={setTeamId}
         members={members}
+        archivedMembers={archivedMembers}
         onAddMember={handleAddMember}
         onDeleteMember={handleDeleteMember}
+        onRestoreMember={handleRestoreMember}
         onCreateTeam={async (name) => {
           await fetch("/api/teams", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
           await fetchTeams();

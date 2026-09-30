@@ -7,7 +7,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { memberId, type, signature } = await request.json();
   if (!memberId || !type || !["in", "out"].includes(type)) return NextResponse.json({ error: "参数无效" }, { status: 400 });
 
-  const { data: member } = await db.from("members").select("id").eq("id", memberId).eq("team_id", teamId).single();
+  const { data: member } = await db.from("members").select("id").eq("id", memberId).eq("team_id", teamId).is("deleted_at", null).single();
   if (!member) return NextResponse.json({ error: "成员不存在" }, { status: 404 });
 
   const recordId = uuidv4();

@@ -9,6 +9,7 @@ import type { Translations } from "@/i18n/en";
 interface HistoryRecord {
   id: string;
   memberName: string;
+  archived?: boolean;
   type: "in" | "out";
   time: string;
   signature: SignatureData | null;
@@ -51,7 +52,7 @@ function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
   onViewSignature?: (name: string, sig: SignatureData, label: string) => void;
   showMemberName: boolean;
 }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +96,7 @@ function DayCard({ day, defaultOpen, onViewSignature, showMemberName }: {
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.type === "in" ? "bg-[rgba(0,128,51,0.1)] text-[var(--green)]" : "bg-[rgba(232,48,48,0.1)] text-red-400"}`}>
                   {r.type === "in" ? t.checkInLabel : t.signOutLabel}
                 </span>
-                {showMemberName && <span className="font-medium text-[var(--text)]/80">{r.memberName}</span>}
+                {showMemberName && <span className="font-medium text-[var(--text)]/80">{r.memberName}{r.archived && <span className="ml-1 text-xs text-[var(--dim)]">{lang === "zh" ? "（已歸檔）" : "(archived)"}</span>}</span>}
                 <span className="text-[var(--dim)] text-xs">{formatTime(r.time)}</span>
               </div>
               {r.signature && onViewSignature && (

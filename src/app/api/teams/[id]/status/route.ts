@@ -7,7 +7,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { data: team } = await db.from("teams").select("id, name, created_at").eq("id", id).single();
   if (!team) return NextResponse.json({ error: "团队不存在" }, { status: 404 });
 
-  const { data: members } = await db.from("members").select("id, name").eq("team_id", id).order("name");
+  const { data: members, error: membersError } = await db.from("members").select("id, name").eq("team_id", id).is("deleted_at", null).order("name");
+  if (membersError) return NextResponse.json({ error: membersError.message }, { status: 500 });
 
   const now = new Date();
   const bjNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
