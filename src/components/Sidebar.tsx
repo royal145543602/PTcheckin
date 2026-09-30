@@ -54,6 +54,21 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
     return t ? Number(t) > Date.now() : false;
   });
 
+  useEffect(() => {
+    if (!pinAuthed) return;
+    const remaining = Number(localStorage.getItem("pinAuthedUntil") || 0) - Date.now();
+    if (remaining <= 0) {
+      localStorage.removeItem("pinAuthedUntil");
+      setPinAuthed(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      localStorage.removeItem("pinAuthedUntil");
+      setPinAuthed(false);
+    }, remaining);
+    return () => window.clearTimeout(timer);
+  }, [pinAuthed]);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -80,11 +95,18 @@ export default function Sidebar({ isOpen, onClose, teams, selectedTeamId, onSele
   async function handleRenameSubmit(e: React.FormEvent) { e.preventDefault(); if (!renameValue.trim() || !selectedTeamId) return; await onRenameTeam(selectedTeamId, renameValue.trim()); setRenaming(false); }
   async function handleCopy() { await navigator.clipboard.writeText(viewUrl); setToastMsg(t.copiedLink.replace("{name}", selectedTeam?.name || "")); }
 
-  function checkPin(action: () => void) { if (pinAuthed) { action(); return; } setPinModal({ action }); setPinInput(""); }
+  function checkPin(action: () => void) {
+    const unlockedUntil = Number(localStorage.getItem("pinAuthedUntil") || 0);
+    if (unlockedUntil > Date.now()) { action(); return; }
+    localStorage.removeItem("pinAuthedUntil");
+    setPinAuthed(false);
+    setPinModal({ action });
+    setPinInput("");
+  }
   function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
     const stored = localStorage.getItem("adminPin") || "0000";
-    if (pinInput === stored) { localStorage.setItem("pinAuthedUntil", String(Date.now() + 30 * 60 * 1000)); setPinAuthed(true); setPinModal(null); if (pinModal) pinModal.action(); }
+    if (pinInput === stored) { localStorage.setItem("pinAuthedUntil", String(Date.now() + 5 * 60 * 1000)); setPinAuthed(true); setPinModal(null); if (pinModal) pinModal.action(); }
   }
 
   function handleDeleteConfirm() {
