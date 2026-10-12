@@ -70,3 +70,5 @@
 .editActions{display:flex;gap:8px;flex-wrap:wrap}.editActions button{font-size:12px!important;min-height:44px}.clientRow:has(.editActions){background:#edf7ef;flex-wrap:wrap}.bulkBar .primary{min-height:44px}.clientTools{margin-top:14px}
 
 @media(max-width:760px){.clientTools{flex-wrap:wrap}.clientTools .search{width:100%}.clientTools>.editActions{width:100%}.clientTools>.editActions button{flex:1;padding:10px 8px}}
+
+.contactPreview{display:block;color:var(--sub);font-size:11px;line-height:1.6;overflow-wrap:anywhere;max-width:180px;margin-top:4px}.contactChoice{min-width:180px;flex:1}.contactChoice input{font-size:13px;padding:10px;min-height:44px}@media(max-width:760px){.contactChoice{flex-basis:100%}.contactPreview{max-width:230px}}
