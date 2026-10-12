@@ -68,3 +68,5 @@
 .inlineChoice{margin:0!important;gap:5px!important;font-size:11px!important;color:var(--sub);min-width:105px}.inlineChoice select{padding:9px 10px;font-size:13px;min-height:44px}.bulkBar .bulkChoice{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin:0;font-size:11px;min-width:140px}.bulkChoice select{padding:9px 10px;font-size:13px;min-height:44px}.app select:disabled{opacity:.55;cursor:not-allowed}@media(max-width:760px){.clientRow .personName{flex-basis:calc(100% - 60px);min-width:0}.inlineChoice{flex:1;min-width:100px}.clientRow .textButton{align-self:flex-end}.bulkBar .bulkChoice{flex:1;min-width:120px}.bulkBar>strong{flex:1}}
 
 .editActions{display:flex;gap:8px;flex-wrap:wrap}.editActions button{font-size:12px!important;min-height:44px}.clientRow:has(.editActions){background:#edf7ef;flex-wrap:wrap}.bulkBar .primary{min-height:44px}.clientTools{margin-top:14px}
+
+@media(max-width:760px){.clientTools{flex-wrap:wrap}.clientTools .search{width:100%}.clientTools>.editActions{width:100%}.clientTools>.editActions button{flex:1;padding:10px 8px}}
