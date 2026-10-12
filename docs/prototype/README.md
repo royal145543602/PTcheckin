@@ -72,3 +72,7 @@
 - 调整场次按钮、表头、列表悬停和页面密度。
 - 浏览器验证名单复制成功、切换报名后重置成功状态，以及复制内容确认为 /prototype?mode=register&session=group1。构建通过。
 - 参考：https://reactbits.dev/components/animated-list 和 https://reactbits.dev/animations/animated-content 。
+
+## 姓名排版
+
+移除每日名单、客户管理、报名列表中的全部圆形姓名头像，直接呈现姓名文字。统一姓名字号、字重、间距与对齐。浏览器已检查客户列表无圆形姓名装饰，最终构建通过。
