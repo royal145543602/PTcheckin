@@ -114,3 +114,11 @@
 - 固定安排编辑面板提供确认、取消编辑及删除固定安排。删除确认在同一面板，不丢失未保存草稿；取消编辑回到原值。
 - 删除仅归档规则，并取消其独占、未开始且无出席记录的位置；手动安排、其他规则共享位置和历史保留。已删除列表可恢复规则和仍可安排的后续位置，满额/单日例外跳过。
 - 浏览器验证取消删除保留草稿，取消编辑不保存，删除后使用中 0 / 已删除 1，恢复后使用中 1 / 已删除 0；客户联系方式取消后原值保持。移动布局与参考图桌面宽度已检查，构建通过。仍为本机示例，未上线。
+# 切換動效修正 · 2026-10-13
+
+- 重新閱讀 React Bits 的 AnimatedContent 原始碼及 GSAP 官方 React、gsap.to 文件：https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/Animations/AnimatedContent/AnimatedContent.tsx 、https://gsap.com/resources/React/ 。
+- AnimatedContent 改用 useGSAP 的 layout timing，避免內容先完整顯示一幀再開始入場；保留 power3.out 緩動，打斷動畫時从當前位置繼續。
+- 主畫面、簽到／歷史切換保留舊內容完成 100ms 退場，再提交最後一次選擇；入場 300–360ms。選中塊滑動 340ms。
+- 移除整體內容與卡片重複移動，以及卡片 transform 的 CSS／GSAP 競爭。簽到內容獨立轉場，底部人數欄維持 fixed，父層沒有 transform。
+- 瀏覽器驗證主畫面切換、簽到／歷史連續點擊、場次切換；最後選擇正確，控制台沒有錯誤或警告。生產構建通過。未宣稱已測得 60fps。
+

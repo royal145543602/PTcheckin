@@ -107,3 +107,14 @@
 @media(max-width:1050px){.clientLayout{grid-template-columns:1fr}.referenceGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.managementGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.app .modeBar{padding:8px 12px;gap:5px;min-height:58px}.app .modeBar>span{display:none}.app .modeBar .modeControls{flex:1;width:auto;gap:2px}.app .modeControls button{font-size:11px;padding:7px 10px;min-height:35px}.headerMenu{width:35px;height:35px;min-width:35px}.managementGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.managementCard{min-height:145px;border-radius:12px}.managementName{padding:29px 10px 9px;min-height:103px}.managementName strong{font-size:20px}.managementName small{font-size:10px}.cardCheckbox{left:10px;top:10px}.managementActions{padding-bottom:12px;gap:14px}.panelActionBar{padding-bottom:8px}.referenceHeader{padding:8px 12px;min-height:59px}.referenceHeader h1{font-size:17px}.referenceToolbar{padding:9px 12px;gap:10px;flex-wrap:wrap}.referenceTabs{width:auto;flex:1}.referenceTabs button{font-size:12px;padding:8px 14px}.app .referenceToolbar select{width:158px;font-size:11px}.referenceToolbar label:has(input){flex-basis:100%}.app .referenceToolbar input{width:100%;height:34px;min-height:34px}.referenceGrid{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px 12px 28px;gap:9px}.kioskMode .referenceGrid .kioskPerson{min-height:101px;padding:17px 5px;border-radius:11px;gap:8px!important}.kioskMode .referenceGrid .kioskPerson strong{font-size:20px}.kioskMode .referenceGrid .cardStatus{font-size:9px!important;gap:4px}.referenceStats{min-height:76px;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}.referenceStats strong{font-size:24px}.referenceStats small{font-size:10px}.kioskMode .main{padding-bottom:88px!important}.kioskMode .toast{bottom:92px!important}.kioskHistory{margin:14px 12px}.kioskMode .demoBar>span{max-width:none}.kioskMode .demoBar button{white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){.managementCard,.managementName,.referenceGrid .kioskPerson{transition:none!important}}
+
+/* A single GSAP owner per layer: no competing CSS movement on content/cards. */
+.dailyGrid,.request,.guest,.shareChoices .shareOption{animation:none}
+.referenceTabs{position:relative;isolation:isolate}
+.referenceTabs button{position:relative;z-index:1;transition:color 160ms;background:transparent!important}
+.referenceTabs .referenceActive{background:transparent}
+.kioskMarker{position:absolute;left:0;top:0;pointer-events:none;z-index:0;border-radius:20px;background:#00e85c}
+.app .referenceGrid .kioskPerson{transition:background-color 200ms,color 180ms}
+.app .referenceGrid .kioskPerson:active{transform:none}
+.drawer{animation-duration:320ms}
+@media(prefers-reduced-motion:reduce){.drawer{animation:none}.referenceTabs button{transition:none}}
