@@ -104,6 +104,7 @@ export default function PrototypePage() {
   const [syncTime, setSyncTime] = useState("");
   const [ready, setReady] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  const menuExit = useRef<gsap.core.Tween | null>(null);
 
   useLayoutEffect(() => {
     // New screens start at their own header, not the previous screen's scroll.
@@ -126,6 +127,9 @@ export default function PrototypePage() {
   useEffect(() => { if (ready && publicSurface !== "roster" && publicSurface !== "invalid") { try { localStorage.setItem("pt-roster-prototype-v3", JSON.stringify(data)); } catch { /* Demo remains usable without persistence. */ } } }, [data, ready, publicSurface]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(""), 3800); return () => clearTimeout(timer); }, [toast]);
   useEffect(() => {
+    menuExit.current?.kill();
+    menuExit.current = null;
+    if (dialog.current) gsap.set(dialog.current, { clearProps: "transform,pointerEvents" });
     setFormError(""); setRuleDeleteId("");
     if (drawer || signPerson) dialog.current?.showModal();
     else if (dialog.current?.open) dialog.current.close();
@@ -148,7 +152,17 @@ export default function PrototypePage() {
   const count = (id: string) => data.places.filter((item) => item.sessionId === id && !item.removedAt).length;
   const chooseSession = (item: Session) => { setSelected([]); setDate(item.date); setSessionId(item.id); setRosterTab("roster"); };
   const chooseDate = (value: string) => { setSelected([]); setDate(value); const next = data.sessions.find((item) => item.date === value && item.public); if (next) setSessionId(next.id); setRosterTab("roster"); };
-  const closeDialog = () => { setDrawer(null); setSignPerson(""); setStrokes([]); setEditingPerson(""); };
+  const closeDialog = () => {
+    if (drawer?.kind === "menu" && dialog.current?.open && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (menuExit.current?.isActive()) return;
+      gsap.set(dialog.current, { pointerEvents: "none" });
+      menuExit.current = gsap.to(dialog.current, { xPercent: -100, duration: .22, ease: "power3.in", onComplete: () => {
+        setDrawer((current) => current?.kind === "menu" ? null : current);
+      } });
+      return;
+    }
+    setDrawer(null); setSignPerson(""); setStrokes([]); setEditingPerson("");
+  };
 
   function processRequest(id: string, state: Application["state"]) {
     if (busy) return;
@@ -449,7 +463,7 @@ export default function PrototypePage() {
     {view === "kiosk" && <footer className={s.referenceStats}><div><strong><AnimatedNumber className={s.countValue} value={roster.filter((place) => place.attendance === "in").length} /></strong><small>✓ 在場</small></div><div><strong><AnimatedNumber className={s.countValue} value={roster.filter((place) => place.attendance === "none").length} /></strong><small>◷ 未到</small></div><div><strong><AnimatedNumber className={s.countValue} value={roster.length} /></strong><small>總計 · 已簽退 {roster.filter((place) => place.attendance === "out").length}</small></div></footer>}
     {view !== "register" && view !== "kiosk" && <nav className={s.bottomNav} aria-label="手机管理导航">{navigation.map((item) => <button key={item.id} className={view === item.id || item.id === "daily" && view === "week" ? s.navActive : ""} onClick={() => { setView(item.id); setSearch(""); }}>{item.icon}<span>{item.name}</span></button>)}</nav>}
     {toast && <div className={s.toast} role="status"><IconCheck size={18} />{toast}</div>}
-    <dialog className={`${s.drawer} ${drawer?.kind === "share" ? s.shareDialog : ""} ${signPerson ? s.attendanceDialog : ""}`} aria-label={drawer?.kind === "share" ? "分享本場連結" : signPerson ? "確認現場簽到" : "管理詳情與安排"} ref={dialog} onCancel={closeDialog} onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
+    <dialog className={`${s.drawer} ${drawer?.kind === "menu" ? s.menuDialog : ""} ${drawer?.kind === "share" ? s.shareDialog : ""} ${signPerson ? s.attendanceDialog : ""}`} aria-label={drawer?.kind === "share" ? "分享本場連結" : signPerson ? "確認現場簽到" : "管理詳情與安排"} ref={dialog} onCancel={(e) => { e.preventDefault(); closeDialog(); }} onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
       <AnimatedContent className={s.drawerContent} replayKey={`${drawer?.kind || signPerson}:${ruleDeleteId}:${ruleFilter}:${editingPerson}`} animateOnMount={false} distance={10} duration={.32}><button className={s.close} onClick={closeDialog} aria-label="關閉詳情">×</button>
       {drawer?.kind === "menu" && <><h2>PRIMETIME</h2><div className={s.menuChoices}>{navigation.map((item) => <button className={s.secondary} key={item.id} onClick={() => { closeDialog(); setView(item.id); setSearch(""); }}>{item.icon}{item.name}</button>)}<button className={s.secondary} onClick={() => { closeDialog(); setGuestStep(1); setView("register"); }}>客人報名預覽</button><button className={s.secondary} onClick={() => { closeDialog(); setView("kiosk"); }}>現場簽到</button></div><button className={s.textButton} onClick={closeDialog}>取消返回</button></>}
       {drawer?.kind === "share" && <><div className={s.shareHeading}><span className={s.shareSymbol}><IconLink size={25} /></span><h2>分享這一場</h2><p>{dateLabel(session.date)} · {session.title} · {session.time}</p></div><div className={s.shareChoices} role="group" aria-label="選擇分享內容"><button className={`${s.shareOption} ${shareMode === "roster" ? s.shareChosen : ""}`} aria-pressed={shareMode === "roster"} onClick={() => { setShareMode("roster"); setCopied(false); setCopyFailed(false); }}><span className={s.shareOptionIcon}><IconGroup size={23} /></span><span><strong>名單展示</strong><small>查看本班名單、簽到與簽退狀態</small></span><span className={s.choiceMark}>{shareMode === "roster" && <IconCheck size={15} />}</span></button><button className={`${s.shareOption} ${shareMode === "register" ? s.shareChosen : ""}`} aria-pressed={shareMode === "register"} disabled={!session.public} onClick={() => { setShareMode("register"); setCopied(false); setCopyFailed(false); }}><span className={s.shareOptionIcon}><IconPlus size={23} /></span><span><strong>客人報名</strong><small>{session.public ? "填寫報名資料，等待後台確認" : "本場未開放客人報名"}</small></span><span className={s.choiceMark}>{shareMode === "register" && <IconCheck size={15} />}</span></button></div><div className={s.shareScope}><IconLock size={15} /><span>只分享本場 · 不含聯絡方式與付款資料</span></div><button className={`${s.copyButton} ${copied ? s.copySuccess : ""}`} disabled={copyBusy} onClick={async () => { setCopyBusy(true); setCopyFailed(false); try { await navigator.clipboard.writeText(publicLink(shareMode)); setCopied(true); } catch { setCopyFailed(true); } finally { setCopyBusy(false); } }}><span key={copied ? "copied" : "copy"}>{copied ? <IconCheck size={19} /> : <IconLink size={19} />}{copyBusy ? "正在複製…" : copied ? "已複製連結" : `複製${shareMode === "roster" ? "名單" : "報名"}連結`}</span></button><p className={s.copyFeedback} role="status">{copied ? "可以貼到聊天或群組中分享了。" : "選好分享內容，再按一下複製。"}</p>{copyFailed && <label className={s.copyFallback}>瀏覽器未允許複製，可選取以下連結<input readOnly value={publicLink(shareMode)} onFocus={(e) => e.currentTarget.select()} /></label>}<div className={s.shareFooter}><button className={s.textButton} onClick={closeDialog}>返回名單</button><a href={publicLink(shareMode)} target="_blank" rel="noopener noreferrer">預覽客人頁面 ↗</a></div></>}
