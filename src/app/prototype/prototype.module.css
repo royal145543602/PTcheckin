@@ -206,3 +206,5 @@
 .openingShareDialog .openingDays{flex:1;min-height:0;max-height:none}.openingShareDialog .copyButton{flex-shrink:0}
 .openingShareDialog .openingShareNote{margin:12px 0!important;flex-shrink:0}.openingShareDialog .shareFooter{margin-top:14px;flex-shrink:0;padding-top:10px}
 @media(max-width:760px){.openingShareDialog .drawerContent{padding:28px 22px 20px}.openingShareDialog .shareHeading h2{font-size:23px}.openingShareDialog .shareHeading p{font-size:11px!important}}
+.openingSessionChoice{display:flex!important;flex-direction:row!important;align-items:center;gap:12px;margin:0!important;flex:1;min-width:0}.openingSessionChoice>span{flex:1}.openingDays .openingSession{gap:10px}.openingSession>b{flex-shrink:0}.openingSession .textButton{font-size:11px;min-height:40px;padding:8px;flex-shrink:0}.openingShareDialog .shareHeading>.textButton{padding:8px 0;font-size:12px;min-height:36px;margin-top:6px}
+.rosterActions{flex-wrap:wrap;justify-content:flex-end}.rosterActions>.textButton{font-size:11px;min-height:36px}
