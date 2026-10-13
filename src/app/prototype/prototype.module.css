@@ -187,3 +187,10 @@
 @media(max-width:760px){.referenceTabs{flex:auto}.attendanceControls{margin-left:auto}.attendanceControls button{padding:8px 10px;font-size:11px}.referenceToolbar label:has(select){flex:1}.app .referenceToolbar select{width:100%}.attendanceBatchBar{padding:12px;gap:10px}.attendanceBatchBar>div{width:100%;margin:0}.attendanceBatchBar>div button{flex:1}.attendanceCheck{left:8px;top:8px;width:16px;height:16px;font-size:11px}}
 .attendanceBatchBar .primary{background:#00e85c;color:#082512}
 @media(max-width:760px){.referenceToolbar label:has(select),.referenceToolbar label:has(input){flex:1 1 calc(50% - 5px)}}
+
+/* Four equal metrics: each count has one readable label. */
+.referenceStats{grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;gap:8px;padding-inline:24px}
+.referenceStats strong{font-size:28px;font-weight:650;line-height:1.15;letter-spacing:-.02em}
+.referenceStats small{font-size:12px;font-weight:450;color:#c0d0c5;margin-top:7px;line-height:1.3}
+.referenceStats .statsSignedOut strong{color:#f4b7a8}
+@media(max-width:760px){.referenceStats{gap:4px;padding-inline:12px}.referenceStats strong{font-size:24px}.referenceStats small{font-size:11px;margin-top:6px}}
