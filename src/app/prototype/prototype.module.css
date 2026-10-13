@@ -149,3 +149,33 @@
 .menuFooter button{width:100%;background:transparent;color:#64766b;font-size:12px;justify-content:space-between;min-height:44px;padding:8px 0}
 .menuDialog .close{width:34px;height:34px;right:20px;top:16px;background:transparent!important;font-size:24px;border-radius:6px;color:#64766b}
 @media(prefers-reduced-motion:reduce){.menuLink>span,.menuArrow{transition:none!important;transform:none!important}}
+
+/* Full-screen signing workspace, separate from administrative drawers. */
+.attendanceDialog{inset:0!important;margin:0!important;width:100vw!important;max-width:100vw!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important;overflow:auto;animation:signScreenEnter 220ms ease-out}
+.attendanceDialog .drawerContent{padding:0!important;height:100%;min-height:0}
+.attendanceDialog .drawerContent>.close{display:none}
+.signatureScreen{height:100%;min-height:480px;display:flex;flex-direction:column;background:#f1f5f2;--sign-accent:#00e85c}
+.signingOut{--sign-accent:#ffccc2}
+.signHeader{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 32px;background:#0a1b10;color:white;flex-shrink:0;gap:20px}
+.signHeader small{font-size:12px;color:var(--sign-accent)}
+.signHeader h2{font-size:28px;margin:3px 0 5px;padding:0;color:white}
+.signHeader p{font-size:12px;color:#bdcec2}
+.signHeader button{background:transparent;color:#dce9df;min-width:44px;min-height:44px;font-size:28px;border-radius:8px}
+.signBody{flex:1;min-height:0;display:flex;flex-direction:column;padding:24px 32px 12px;gap:12px}
+.signInstructions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.signInstructions strong{font-size:14px;font-weight:550}
+.signInstructions span{font-size:12px;color:#5a6f60}
+.signCanvas{flex:1;min-height:180px;background:white;border:1px solid #c8d8ce;border-radius:12px;overflow:hidden}
+.signHint{font-size:11px;color:#5a6f60;margin:0}
+.signFooter{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:16px 32px calc(16px + env(safe-area-inset-bottom));gap:16px;background:white;border-top:1px solid #dfe8e1}
+.signTools,.signActions{display:flex;align-items:center;gap:12px}
+.signTools button{background:transparent;color:#42614e;font-size:13px;min-height:44px;padding:8px 12px;border-radius:8px}
+.signTools button:disabled{background:transparent;opacity:.5;color:#52685a}
+.attendanceDialog .signActions .primary,.attendanceDialog .signActions .secondary{margin:0;min-height:48px;width:auto;padding:12px 28px;font-size:14px}
+.attendanceDialog .signingOut .primary{background:#ffccc2;color:#78251d}
+.skipSignatureNotice{display:flex;align-items:center;gap:16px;padding:16px 32px;background:#fff6e4;border-top:1px solid #e5cf9b;flex-shrink:0}
+.skipSignatureNotice>div{margin-right:auto}.skipSignatureNotice strong{font-size:14px}.skipSignatureNotice p{font-size:12px;margin:4px 0 0;color:#715521}
+.attendanceDialog .skipSignatureNotice .primary,.attendanceDialog .skipSignatureNotice .secondary{margin:0;width:auto;min-height:44px;font-size:13px}
+@keyframes signScreenEnter{from{opacity:0}to{opacity:1}}
+@media(max-width:760px){.signHeader{padding:16px 18px}.signHeader h2{font-size:25px}.signHeader p{font-size:11px}.signBody{padding:18px 14px 12px;gap:10px}.signInstructions{align-items:flex-start;flex-direction:column;gap:4px}.signInstructions span{font-size:11px}.signFooter{flex-direction:column;align-items:stretch;padding:8px 14px calc(14px + env(safe-area-inset-bottom));gap:5px}.signTools{justify-content:flex-start}.signTools button{padding:8px 10px}.signActions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px}.attendanceDialog .signActions .primary,.attendanceDialog .signActions .secondary{width:100%;padding:12px 14px}.skipSignatureNotice{padding:14px;flex-wrap:wrap;gap:10px}.skipSignatureNotice>div{width:100%}.attendanceDialog .skipSignatureNotice button{flex:1}}
+@media(prefers-reduced-motion:reduce){.attendanceDialog{animation:none}}

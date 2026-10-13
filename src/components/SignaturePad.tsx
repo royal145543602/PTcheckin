@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useCallback, useLayoutEffect, useRef, type PointerEvent } from "react";
 import type { SignatureData } from "@/lib/types";
 
 interface SignaturePadProps {
@@ -12,101 +12,83 @@ interface SignaturePadProps {
 
 export default function SignaturePad({ strokes, onChange, width = 900, height = 600 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drawing, setDrawing] = useState(false);
-  const currentStroke = useRef<{ x: number; y: number }[]>([]);
-
-  const getPos = useCallback((e: React.PointerEvent) => {
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = width / rect.width;
-    const scaleY = height / rect.height;
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
-  }, [width, height]);
+  const points = useRef<{ x: number; y: number }[]>([]);
+  const pointer = useRef<number | null>(null);
+  const frame = useRef(0);
+  const latest = useRef({ strokes, onChange });
+  latest.current = { strokes, onChange };
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    ctx.clearRect(0, 0, width, height);
-
-    // Subtle grid for premium feel
-    ctx.strokeStyle = "rgba(0,128,51,0.04)";
-    ctx.lineWidth = 0.5;
-    const gridSize = 40;
-    for (let x = 0; x <= width; x += gridSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    const box = canvas.getBoundingClientRect();
+    if (!box.width || !box.height) return;
+    const ratio = Math.min(window.devicePixelRatio || 1, 3);
+    const bitmapWidth = Math.round(box.width * ratio);
+    const bitmapHeight = Math.round(box.height * ratio);
+    if (canvas.width !== bitmapWidth || canvas.height !== bitmapHeight) {
+      canvas.width = bitmapWidth; canvas.height = bitmapHeight;
     }
-    for (let y = 0; y <= height; y += gridSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-    }
-
-    // Signature line
-    ctx.strokeStyle = "rgba(0,128,51,0.15)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 8]);
-    ctx.beginPath();
-    ctx.moveTo(width * 0.15, height * 0.65);
-    ctx.lineTo(width * 0.85, height * 0.65);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Draw strokes
-    ctx.strokeStyle = "#008033";
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    const allStrokes = [...strokes, ...(drawing ? [{ points: currentStroke.current }] : [])];
-    for (const stroke of allStrokes) {
-      if (stroke.points.length < 2) continue;
-      ctx.beginPath();
-      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const sx = box.width / width, sy = box.height / height;
+    ctx.setTransform(ratio * sx, 0, 0, ratio * sy, 0, 0);
+    ctx.strokeStyle = "#173b29"; ctx.fillStyle = "#173b29";
+    ctx.lineWidth = 2.6 / Math.sqrt(sx * sy);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const all = [...latest.current.strokes, ...(points.current.length ? [{ points: points.current }] : [])];
+    for (const stroke of all) {
+      const p = stroke.points;
+      if (!p.length) continue;
+      if (p.length === 1) {
+        ctx.beginPath(); ctx.arc(p[0].x, p[0].y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill();
+        continue;
       }
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p[0].x, p[0].y);
+      for (let i = 1; i < p.length - 1; i++) {
+        ctx.quadraticCurveTo(p[i].x, p[i].y, (p[i].x + p[i + 1].x) / 2, (p[i].y + p[i + 1].y) / 2);
+      }
+      ctx.lineTo(p[p.length - 1].x, p[p.length - 1].y); ctx.stroke();
     }
-  }, [strokes, drawing, width, height]);
+  }, [width, height]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     redraw();
-  }, [strokes, redraw]);
+    const observer = new ResizeObserver(redraw);
+    if (canvasRef.current) observer.observe(canvasRef.current);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame.current); };
+  }, [redraw]);
+  useLayoutEffect(() => { redraw(); }, [strokes, redraw]);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    canvasRef.current?.setPointerCapture(e.pointerId);
-    setDrawing(true);
-    currentStroke.current = [getPos(e)];
+  const position = (event: { clientX: number; clientY: number }) => {
+    const box = canvasRef.current!.getBoundingClientRect();
+    return { x: Math.max(0, Math.min(width, (event.clientX - box.left) * width / box.width)), y: Math.max(0, Math.min(height, (event.clientY - box.top) * height / box.height)) };
+  };
+  const finish = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (pointer.current !== event.pointerId) return;
+    pointer.current = null;
+    const stroke = points.current;
+    points.current = [];
+    if (stroke.length) latest.current.onChange([...latest.current.strokes, { points: stroke }]);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!drawing) return;
-    currentStroke.current.push(getPos(e));
-    redraw();
-  };
-
-  const handlePointerUp = () => {
-    if (!drawing) return;
-    setDrawing(false);
-    if (currentStroke.current.length > 0) {
-      onChange([...strokes, { points: currentStroke.current }]);
-    }
-    currentStroke.current = [];
-  };
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className="w-full h-full min-h-[280px] rounded-xl bg-[rgba(0,0,0,0.04)] touch-none cursor-crosshair"
-      style={{ border: "1px solid rgba(0,128,51,0.12)" }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-    />
-  );
+  return <canvas ref={canvasRef} aria-label="簽名區，使用手指、觸控筆或滑鼠書寫"
+    style={{ display: "block", width: "100%", height: "100%", minHeight: 180, touchAction: "none", cursor: "crosshair", background: "#fff" }}
+    onPointerDown={(event) => {
+      if (pointer.current !== null || event.pointerType === "mouse" && event.button !== 0) return;
+      event.preventDefault(); pointer.current = event.pointerId;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      points.current = [position(event)]; redraw();
+    }}
+    onPointerMove={(event) => {
+      if (pointer.current !== event.pointerId) return;
+      const samples = event.nativeEvent.getCoalescedEvents?.() || [];
+      for (const sample of samples.length ? samples : [event]) points.current.push(position(sample));
+      if (!frame.current) frame.current = requestAnimationFrame(() => { frame.current = 0; redraw(); });
+    }}
+    onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}
+  />;
 }
