@@ -24,7 +24,7 @@ export default function useAnimatedSwitch<T extends string>(initial: T, root: Re
       tween.current = gsap.to(region, { opacity: 1, ...(distance ? { y: 0 } : {}), duration: .24, ease: "power3.out", overwrite: true, clearProps: "transform,opacity,willChange" });
       return;
     }
-    gsap.set(region, { willChange: "transform,opacity" });
+    gsap.set(region, { willChange: distance ? "transform,opacity" : "opacity" });
     tween.current = gsap.to(region, {
       opacity: 0, ...(distance ? { y: -distance } : {}), duration: .1, ease: "power2.in", overwrite: true,
       onComplete: () => {

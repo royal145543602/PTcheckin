@@ -34,7 +34,7 @@ export default function AnimatedContent({ children, distance = 12, direction = "
       // Finish interrupted motion from its current position rather than reverting.
       const interrupted = gsap.isTweening(el);
       gsap.killTweensOf(el);
-      gsap.set(el, { willChange: "transform,opacity" });
+      gsap.set(el, { willChange: distance ? "transform,opacity" : "opacity" });
       if (!interrupted) gsap.set(el, { ...(distance ? { [axis]: distance } : {}), opacity: initialOpacity });
       gsap.to(el, { ...(distance ? { [axis]: 0 } : {}), opacity: 1, duration, ease: "power3.out", overwrite: true, clearProps: "transform,opacity,willChange" });
   }, { scope: ref, dependencies: [replayKey, animateOnMount, enabled, direction, distance, duration, initialOpacity] });
