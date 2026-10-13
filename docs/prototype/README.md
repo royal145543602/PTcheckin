@@ -193,3 +193,18 @@
 
 ### Compact customer directory
 Customer management now displays one customer per compact row, with selection, name, group, edit and details aligned for quick scanning. Mobile keeps the group beneath the name. Existing bulk operations and customer actions are preserved.
+
+## Cloud workspace release
+
+- `/` and `/admin` open `/manage`, protected by the existing server verified five minute admin cookie.
+- Default customers, sessions, applications, signatures and client side demo storage have been removed. Browser demo data is never imported into the cloud workspace.
+- `/manage?mode=register&page=booking` is the shared multi day booking page. `/manage?mode=register&session=<id>` is a single session signup; `/manage?mode=roster&session=<id>` is read only; `/manage?mode=kiosk&session=<id>` permits same day check-in/out. All links use the runtime site origin.
+- `/api/workspace` stores a private Supabase document with a revision counter. Conflicting writes return 409 and refresh the latest state; they cannot overwrite a concurrent application or check-in. The interface blocks additional actions while saving.
+- Public reads return scoped fields only. Contacts, payments, signatures, internal rules and other applications remain private. A random application receipt can read only its own result.
+- New tables have RLS enabled and no anon/authenticated access. Shared database counters limit password attempts and public writes across Worker instances.
+- Existing team/member/record tables and their history are independent; `/legacy`, `/kiosk/<team>` and `/view/<team>` retain compatibility.
+- Verification: `node tests/cloud-workspace.cjs` tests unauthorized access, scope, privacy, check-in transitions, history retention, five-minute expiry and revision conflicts; Cloudflare OpenNext production build succeeds.
+
+Cloudflare preview verification (2026-10-13): uploaded version `5f4de21b-b881-4ce5-9030-3363a55e3bee`. Live checks passed for empty public booking data, admin 401, wrong-password 401, submitted application/receipt privacy, check-in then checkout, blocked re-entry, and read-only attendance rejection. Temporary release verification entries were removed with a revision=4 guard; the resulting revision=5 has zero customers, sessions, applications and new attendance records. Old team/member/record history was not modified.
+
+Production cutover: user explicitly approved deployment, and version `5f4de21b-b881-4ce5-9030-3363a55e3bee` received 100% of traffic. After verifying all old API routes use the server-only getDb client, the existing tables had RLS enabled and anon/authenticated access revoked with preconditions checking service_role permissions and RLS bypass. Legacy public status/member/history endpoints still respond; protected management endpoints return 401. Existing stored legacy data remains present (3 teams, 16 members, 56 records). The new empty workspace remains independent.

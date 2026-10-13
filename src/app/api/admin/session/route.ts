@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminConfigured, adminCookie, createAdminSession, hasAdminSession, pinMatches } from "@/lib/admin-auth";
+import { allowRequest } from "@/lib/request-limit";
 
 const attempts = new Map<string, { count: number; until: number }>();
 const LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -8,10 +9,19 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ unlocked: await hasAdminSession(request) }, { headers: { "Cache-Control": "no-store" } });
 }
 
+export async function DELETE(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== request.nextUrl.origin) return NextResponse.json({ error: "请求来源无效" }, { status: 403 });
+  const response = NextResponse.json({ unlocked: false });
+  response.cookies.set("pt_admin", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/api", maxAge: 0 });
+  return response;
+}
+
 export async function POST(request: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ error: "管理员密码尚未配置" }, { status: 503 });
   const origin = request.headers.get("origin");
   if (origin && origin !== request.nextUrl.origin) return NextResponse.json({ error: "请求来源无效" }, { status: 403 });
+  try { if (!(await allowRequest(request, "admin-login", 10, 900))) return NextResponse.json({ error: "尝试次数过多，请稍后再试" }, { status: 429 }); } catch { return NextResponse.json({ error: "暂时无法验证密码，请稍后再试" }, { status: 503 }); }
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || "unknown";
   const now = Date.now();
   const previous = attempts.get(ip);

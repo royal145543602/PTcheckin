@@ -12,7 +12,7 @@ const blankDay = (): BookingDay => ({ id: crypto.randomUUID(), date: "", slots: 
 
 export default function BookingPageEditor({ initial, saved, url, onSave, onBack }: {
   initial?: BookingDraft; saved: boolean; url: string;
-  onSave: (draft: BookingDraft) => string | null; onBack: () => void;
+  onSave: (draft: BookingDraft) => string | null | Promise<string | null>; onBack: () => void;
 }) {
   const [draft, setDraft] = useState<BookingDraft>(() => initial || { title: "", description: "", days: [] });
   const [dirty, setDirty] = useState(false);
@@ -23,8 +23,8 @@ export default function BookingPageEditor({ initial, saved, url, onSave, onBack 
   function change(next: BookingDraft) { setDraft(next); setDirty(true); setError(""); setCopied(false); }
   function changeDay(id: string, fn: (day: BookingDay) => BookingDay) { change({ ...draft, days: draft.days.map((day) => day.id === id ? fn(day) : day) }); }
   function changeSlot(dayId: string, slotId: string, field: keyof BookingSlot, value: string) { changeDay(dayId, (day) => ({ ...day, slots: day.slots.map((slot) => slot.id === slotId ? { ...slot, [field]: value } : slot) })); }
-  function save() {
-    const issue = onSave(draft);
+  async function save() {
+    const issue = await onSave(draft);
     if (issue) { setError(issue); return; }
     setDraft({ ...draft, days: draft.days.map((day) => ({ ...day, slots: day.slots.map((slot) => ({ ...slot, originalSeats: Number(slot.seats) })) })) });
     setPublished(true); setDirty(false); setCopied(false);
@@ -33,7 +33,7 @@ export default function BookingPageEditor({ initial, saved, url, onSave, onBack 
   const total = slots.reduce((sum, slot) => sum + (Number(slot.seats) || 0), 0);
   return <section className={s.bookingEditor} aria-label="報名分享頁設定">
     <button className={s.textButton} onClick={onBack}>← 返回客戶管理</button>
-    <div className={s.bookingIntro}><label>分享頁標題<input value={draft.title} placeholder="填寫這次報名活動的名稱" onChange={(e) => change({ ...draft, title: e.target.value })} maxLength={80} /></label><label>給客人的說明<textarea value={draft.description} placeholder="例如地點、適合對象、報名須知（選填）" onChange={(e) => change({ ...draft, description: e.target.value })} maxLength={1000} rows={3} /></label></div>
+    <div className={s.bookingIntro}><label>分享頁標題<input value={draft.title} placeholder="填寫這次報名活動的名稱" onChange={(e) => change({ ...draft, title: e.target.value })} maxLength={60} /></label><label>給客人的說明<textarea value={draft.description} placeholder="例如地點、適合對象、報名須知（選填）" onChange={(e) => change({ ...draft, description: e.target.value })} maxLength={1000} rows={3} /></label></div>
     <div className={s.bookingSectionTitle}><div><h2>日期與時段</h2><p>一天可設多個時段，每個時段的名額各自填寫。</p></div><button className={s.secondary} onClick={() => change({ ...draft, days: [...draft.days, blankDay()] })}>＋ 添加一天</button></div>
     {!draft.days.length && <div className={s.bookingEmpty}><h3>從你要開放的第一天開始</h3><p>日期、時間、名額都由你決定。</p><button className={s.primary} onClick={() => change({ ...draft, days: [blankDay()] })}>添加第一天</button></div>}
     {draft.days.map((day, index) => <AnimatedContent key={day.id} className={s.bookingDay} distance={8} duration={.24}>
