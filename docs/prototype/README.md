@@ -190,3 +190,6 @@
 - 修复 native date/time 与 React 输入事件配合问题，使用 onInput 保留实际输入。保存检查日期、时段、名额及历史日期限制；未修改名额时不意外补回已经报名占用的名额。
 - 验证初始空白、两天三个时段、复制及移除时段、保存及复制一个链接、公開页展示全部日期、改名额后原链接更新、再次打开恢复已保存配置。手机及桌面布局已检查，构建通过。
 - 旧后台分享弹窗及其辅助代码已移除。每日单场分享继续保留。当前仍为本地示例，未部署正式网站／API。
+
+### Compact customer directory
+Customer management now displays one customer per compact row, with selection, name, group, edit and details aligned for quick scanning. Mobile keeps the group beneath the name. Existing bulk operations and customer actions are preserved.
