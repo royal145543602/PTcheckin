@@ -125,3 +125,27 @@
 .menuDialog .menuChoices .secondary{min-height:48px;justify-content:flex-start}
 @keyframes menuEnter{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.menuDialog{animation:none}}
+
+/* Flat navigation: typography and spacing replace stacked button blocks. */
+.menuDialog .drawerContent{display:flex;flex-direction:column;padding:62px 26px 24px}
+.menuHeader{margin-bottom:30px}
+.menuHeader h2{font-size:22px;letter-spacing:.02em;font-weight:700;margin:0}
+.menuHeader p{font-size:11px;color:#64766b;margin-top:6px}
+.menuDialog .menuChoices{display:flex;flex-direction:column;gap:0;margin:0}
+.menuDialog .menuLink{width:100%;background:transparent;color:#1d3024;min-height:52px;padding:12px 0;display:flex;justify-content:space-between;gap:18px;text-align:left;border-radius:0;font-size:18px;font-weight:550;transition:color 160ms}
+.menuLink>span:first-child{transition:transform 200ms cubic-bezier(.22,1,.36,1)}
+.menuDialog .menuLink:hover{color:#16864b;background:transparent}
+.menuDialog .menuLink:hover>span:first-child{transform:translateX(4px)}
+.menuDialog .menuLink:active{transform:none}
+.menuDialog .menuLink:focus-visible{outline:2px solid #16864b;outline-offset:4px;border-radius:4px}
+.menuDialog .menuCurrent{color:#14753e}
+.menuCurrent small{font-size:10px;font-weight:500;color:#14753e}
+.menuArrow{font-size:17px;color:#829188;transition:transform 200ms,color 200ms}
+.menuLink:hover .menuArrow{transform:translate(2px,-2px);color:#16864b}
+.menuShortcuts{margin-top:22px;padding-top:22px;border-top:1px solid #e4eae5}
+.menuShortcuts h3{font-size:11px;font-weight:500;color:#64766b;margin:0 0 9px}
+.menuDialog .menuShortcuts .menuLink{font-size:14px;min-height:46px;font-weight:450}
+.menuFooter{margin-top:auto;padding-top:28px}
+.menuFooter button{width:100%;background:transparent;color:#64766b;font-size:12px;justify-content:space-between;min-height:44px;padding:8px 0}
+.menuDialog .close{width:34px;height:34px;right:20px;top:16px;background:transparent!important;font-size:24px;border-radius:6px;color:#64766b}
+@media(prefers-reduced-motion:reduce){.menuLink>span,.menuArrow{transition:none!important;transform:none!important}}
