@@ -98,3 +98,5 @@
 @media(prefers-reduced-motion:reduce){.slidingMarker{will-change:auto}.app button,.app input,.app select,.app textarea,.kioskPerson{transition:none!important}.app button:active:not(:disabled),.kioskPerson:active{transform:none!important}}
 
 .metrics .countValue,.attendanceSummary .countValue{display:inline;font:inherit;color:inherit;letter-spacing:inherit}.attendanceSummary strong{font-variant-numeric:tabular-nums}
+
+.ruleEntry{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}.ruleEntry strong{font-size:14px;font-weight:600}.ruleEntry p{font-size:12px;margin-top:6px;line-height:1.8}.ruleEntry small{display:block;font-size:11px;color:var(--sub);margin-top:5px}.ruleEntry button{flex-shrink:0;font-size:12px!important;min-width:52px}.drawerContent .ruleEntry{padding:17px 0}.drawerContent .ruleEntry .secondary{width:auto;margin:0;min-height:40px;padding:10px 14px}
