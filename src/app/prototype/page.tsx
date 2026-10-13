@@ -49,6 +49,7 @@ export default function PrototypePage() {
   const [guestPhone, setGuestPhone] = useState("");
   const [guestNote, setGuestNote] = useState("");
   const [guestSession, setGuestSession] = useState("");
+  const [guestSelections, setGuestSelections] = useState<string[]>([]);
   const [guestRequest, setGuestRequest] = useState("");
   const [guestError, setGuestError] = useState("");
   const [signPerson, setSignPerson] = useState("");
@@ -105,9 +106,9 @@ export default function PrototypePage() {
     const target = data.sessions.find((item) => campaign ? item.public && ids.includes(item.id) : item.id === params.get("session"));
     if (mode === "register" || mode === "roster") {
       setPublicSurface(target || booking ? mode : "invalid"); setPublicCampaign(campaign); setPublicBookingPage(booking); setPublicSessionIds(campaign ? ids : target ? [target.id] : []);
-      if (target) { setSessionId(target.id); setDate(target.date); setGuestSession(target.id); }
+      if (target) { setSessionId(target.id); setDate(target.date); setGuestSession(target.id); if (!campaign) setGuestSelections([target.id]); }
     } else if (mode && mode !== "kiosk") setPublicSurface("invalid");
-    const receipt = params.get("receipt"); if (receipt && data.requests.some((item) => item.id === receipt)) { setGuestRequest(receipt); setGuestStep(4); }
+    const receipt = params.get("receipt"); if (receipt && data.requests.some((item) => item.id === receipt || item.receiptId === receipt)) { setGuestRequest(receipt); setGuestStep(4); }
     setReady(true);
   }, [cloud.loaded]);
   useEffect(() => {
@@ -138,7 +139,8 @@ export default function PrototypePage() {
   const roster = data.places.filter((item) => item.sessionId === sessionId && !item.removedAt);
   const pending = data.requests.filter((item) => item.state === "pending");
   const currentPending = pending.filter((item) => item.sessionId === sessionId);
-  const currentApplication = data.requests.find((item) => item.id === guestRequest);
+  const currentApplications = data.requests.filter((item) => item.id === guestRequest || item.receiptId === guestRequest);
+  const currentApplication = currentApplications[0];
   const count = (id: string) => data.places.filter((item) => item.sessionId === id && !item.removedAt).length;
   const registrationMaximum = (item: Session) => Math.min(item.capacity, item.registrationLimit ?? item.capacity);
   const remainingSeats = (item: Session) => Math.max(0, registrationMaximum(item) - count(item.id));
@@ -357,12 +359,12 @@ export default function PrototypePage() {
 
   async function submitGuest(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setGuestError("");
-    if (!registrationSessions.some((item) => item.id === guestSession)) { setGuestError("這個場次已停止接受報名，請重新選擇。"); return; }
+    if (!guestSelections.length || guestSelections.some((id) => !registrationSessions.some((item) => item.id === id))) { setGuestError("這個場次已停止接受報名，請重新選擇。"); return; }
     const name = guestName.trim(); const phone = guestPhone.trim();
     if (!name || !phone) { setGuestError("請填寫姓名和聯絡方式。"); return; }
     try {
-      const application = await cloud.submitGuest({ sessionId: guestSession, name, phone, note: guestNote });
-      setGuestRequest(application.id); setGuestStep(4);
+      const application = await cloud.submitGuest({ sessionIds: guestSelections, name, phone, note: guestNote });
+      setGuestRequest(application.receipt); setGuestStep(4);
     } catch (error) { setGuestError(error instanceof Error ? error.message : "報名未提交，請重試。"); }
 
   }
@@ -502,15 +504,15 @@ export default function PrototypePage() {
   function guestPage() {
     if (!registrationSessions.length && guestStep < 4) return <main className={s.guestWrap}><div className={s.guest}><header className={s.guestBrand}>PRIMETIME<small>PERFORMANCE LAB MACAU</small></header><div className={s.guestBody}><h1>暫無開放報名</h1><p className={s.subtitle}>目前沒有開放時段，請稍後再來看看。</p></div></div></main>;
     const target = data.sessions.find((item) => item.id === (currentApplication && guestStep === 4 ? currentApplication.sessionId : guestSession)) || session;
-    const summary = <div className={s.courseSummary}><strong>{target.title}</strong><span>{dateLabel(target.date)} · {target.time}</span><span>PRIMETIME Macau · {target.coach}</span></div>;
+    const chosen = guestStep === 4 ? data.sessions.filter((item) => currentApplications.some((request) => request.sessionId === item.id)) : registrationSessions.filter((item) => guestSelections.includes(item.id));
+    const summary = <div className={s.courseSummary}>{chosen.map((item) => <div key={item.id}><strong>{item.title}</strong><span>{dateLabel(item.date)} · {item.time}</span></div>)}</div>;
     return <main className={s.guestWrap}><div className={s.guest} key={guestStep}><header className={s.guestBrand}>PRIMETIME<small>PERFORMANCE LAB MACAU</small></header><AnimatedContent className={s.guestBody} data-view-transition replayKey={String(guestStep)} distance={12} duration={.36}>
       {guestStep < 4 && <div className={s.steps}>{[1, 2, 3].map((step) => <span key={step} className={guestStep >= step ? s.stepActive : ""}>{step < guestStep ? "✓" : step}<small>{["選場次", "填資料", "核對"][step - 1]}</small></span>)}</div>}
-      {guestStep === 1 && publicCampaign && <><h1>{publicBookingPage ? data.bookingPage?.title : "選一場，一起訓練"}</h1>{publicBookingPage && data.bookingPage?.description && <p className={s.subtitle}>{data.bookingPage.description}</p>}<p className={s.subtitle}>以下日期開放報名。剩餘名額按已確認名單計算，提交後需等工作人員確認。</p><div className={s.openingSummary}><span>{new Set(registrationSessions.map((item) => item.date)).size} 天</span><span>{registrationSessions.length} 場</span><strong>共 {registrationSessions.reduce((sum, item) => sum + remainingSeats(item), 0)} 個名額</strong></div><div className={s.publicOpenings}>{Array.from(new Set(registrationSessions.map((item) => item.date))).map((day) => <section key={day}><h2>{dateLabel(day)}<small>星期{dayNames[weekdayIndex(day)] || ""}</small></h2>{registrationSessions.filter((item) => item.date === day).map((item) => <button key={item.id} aria-pressed={guestSession === item.id} aria-label={`${dateLabel(day)} ${item.title} ${item.time} 剩餘${remainingSeats(item)}個名額`} className={`${s.openingChoice} ${guestSession === item.id ? s.openingChoiceSelected : ""}`} onClick={() => setGuestSession(item.id)}><span><strong>{item.title}</strong><small>{item.time}</small></span><span className={s.openingSeats}><strong>{remainingSeats(item)}</strong><small>{remainingSeats(item) ? "個名額" : "已滿 · 可候補"}</small></span></button>)}</section>)}</div>{!registrationSessions.length && <p className={s.empty}>目前沒有開放的場次，請稍後再看看。</p>}<button className={s.primary} disabled={!registrationSessions.some((item) => item.id === guestSession)} onClick={() => setGuestStep(2)}>報名這一場 →</button></>}
-      {guestStep === 1 && !publicCampaign && <><h1>預約下一次訓練</h1><p className={s.subtitle}>選擇場次，報名需經工作人員確認。</p><label>選擇日期<select value={data.sessions.find((item) => item.id === guestSession)?.date} onChange={(e) => { const next = registrationSessions.find((item) => item.date === e.target.value); if (next) setGuestSession(next.id); }}>{Array.from(new Set(registrationSessions.map((item) => item.date))).map((day) => <option key={day} value={day}>{dateLabel(day)} · 星期{dayNames[weekdayIndex(day)]}</option>)}</select></label>
-        <div className={s.courseChoices}>{registrationSessions.filter((item) => item.date === target.date).map((item) => <button key={item.id} className={`${s.courseChoice} ${guestSession === item.id ? s.courseSelected : ""}`} onClick={() => setGuestSession(item.id)}><span className={s.radio}>{guestSession === item.id ? "●" : ""}</span><span><strong>{item.title}</strong><p>{item.time}</p><small>{remainingSeats(item) <= 0 ? "已滿，可申請候補" : `剩餘 ${remainingSeats(item)} 個名額`}</small></span></button>)}</div><button className={s.primary} onClick={() => setGuestStep(2)}>下一步 →</button></>}
+      {guestStep === 1 && <><h1>{publicBookingPage ? data.bookingPage?.title : "選擇訓練時段"}</h1>{publicBookingPage && data.bookingPage?.description && <p className={s.subtitle}>{data.bookingPage.description}</p>}<div className={s.openingSummary}><span>可選多個時段</span><strong>已選 {guestSelections.length} 場</strong></div><div className={s.publicOpenings}>{Array.from(new Set(registrationSessions.map((item) => item.date))).map((day) => <section key={day}><h2>{dateLabel(day)}<small>星期{dayNames[weekdayIndex(day)] || ""}</small></h2>{registrationSessions.filter((item) => item.date === day).map((item) => <button key={item.id} role="checkbox" aria-checked={guestSelections.includes(item.id)} disabled={remainingSeats(item) <= 0 || cloud.saving} aria-label={`${dateLabel(day)} ${item.title} ${item.time} 剩餘${remainingSeats(item)}個名額`} className={`${s.openingChoice} ${guestSelections.includes(item.id) ? s.openingChoiceSelected : ""}`} onClick={() => setGuestSelections((ids) => ids.includes(item.id) ? ids.filter((id) => id !== item.id) : [...ids, item.id])}><span className={s.bookingCheck} aria-hidden="true">{guestSelections.includes(item.id) ? "✓" : ""}</span><span><strong>{item.title}</strong><small>{item.time}</small></span><span className={s.openingSeats}><strong>{remainingSeats(item)}</strong><small>{remainingSeats(item) ? "個名額" : "已滿"}</small></span></button>)}</section>)}</div><button className={s.primary} disabled={!guestSelections.length} onClick={() => setGuestStep(2)}>報名已選 {guestSelections.length} 場 →</button></>}
       {guestStep === 2 && <form onSubmit={(e) => { e.preventDefault(); setGuestStep(3); }}><h1>你的報名資料</h1>{summary}<p className={s.demoHint}>填寫你的姓名和聯絡方式，方便工作人員確認。</p><label>姓名<input required maxLength={40} value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="例如：林子軒" autoComplete="off" /></label><label>聯絡方式<input required maxLength={60} value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder="電話或其他聯絡方式" autoComplete="off" /></label><label>備註（選填）<textarea maxLength={200} value={guestNote} onChange={(e) => setGuestNote(e.target.value)} placeholder="如需協助，可在此留言。" /></label><button className={s.primary}>核對資料 →</button><button type="button" className={s.textButton} onClick={() => setGuestStep(1)}>返回選場次</button></form>}
       {guestStep === 3 && <form onSubmit={submitGuest}><h1>確認你的申請</h1>{summary}<dl className={s.details}><dt>姓名</dt><dd>{guestName}</dd><dt>聯絡方式</dt><dd>{guestPhone}</dd><dt>備註</dt><dd>{guestNote || "沒有額外備註"}</dd></dl><p className={s.pendingNotice}>提交後等待工作人員確認，暫時不進入正式名單；提交不代表已付款。</p>{guestError && <p className={s.error} role="alert">{guestError}</p>}<button className={s.primary}>提交報名申請</button><button type="button" className={s.textButton} onClick={() => setGuestStep(2)}>返回修改</button></form>}
-      {guestStep === 4 && currentApplication && <><div className={`${s.statusMark} ${currentApplication.state === "approved" ? s.statusApproved : ""}`}>{currentApplication.state === "approved" ? <IconCheck size={44} /> : <IconHistory size={44} />}</div><h1>{currentApplication.state === "approved" ? "報名已確認" : currentApplication.state === "rejected" ? "這次申請未通過" : currentApplication.state === "waiting" ? "你已加入候補" : "報名已收到"}</h1><p className={s.subtitle}>{currentApplication.state === "approved" ? "你已加入正式名單，到場後可以簽到。" : currentApplication.state === "rejected" ? "你可以選擇其他場次重新申請。" : "等待工作人員確認後，才會加入正式名單。"}</p>{summary}<div className={s.progressRow}><Pill tone="green">已提交</Pill><span>→</span><Pill tone={currentApplication.state === "approved" ? "green" : "amber"}>{currentApplication.state === "approved" ? "已確認" : currentApplication.state === "waiting" ? "候補中" : currentApplication.state === "rejected" ? "未通過" : "待確認"}</Pill></div><p>{currentApplication.name}，此頁會顯示你的最新處理結果。</p>{!publicSurface && <button className={s.primary} onClick={() => { if (currentApplication.state === "approved") { chooseSession(target); setView("kiosk"); } else { setView("requests"); setRequestFilter("pending"); setToast("可在後台確認剛才的申請。"); } }}>{currentApplication.state === "approved" ? "前往場次簽到" : "前往後台確認報名"}</button>}<button className={s.textButton} onClick={() => { setGuestStep(1); setGuestRequest(""); }}>再報名其他場次</button></>}
+      {guestStep === 4 && currentApplication && <><div className={s.statusMark}><IconCheck size={44} /></div><h1>報名已收到</h1><p className={s.subtitle}>{currentApplication.name}，已提交 {currentApplications.length} 個場次，以下顯示各場處理結果。</p><div className={s.courseSummary}>{currentApplications.map((application) => { const item = data.sessions.find((item) => item.id === application.sessionId); return <div key={application.id}><strong>{item?.title}</strong><span>{item ? dateLabel(item.date) : ""} · {item?.time}</span><Pill tone={application.state === "approved" ? "green" : "amber"}>{application.state === "approved" ? "已確認" : application.state === "rejected" ? "未通過" : application.state === "waiting" ? "候補中" : "待確認"}</Pill></div>; })}</div><button className={s.textButton} onClick={() => { setGuestStep(1); setGuestRequest(""); setGuestSelections([]); }}>再報名其他場次</button></>}
+
     </AnimatedContent></div></main>;
   }
 

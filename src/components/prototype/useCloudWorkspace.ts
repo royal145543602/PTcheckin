@@ -47,17 +47,17 @@ export default function useCloudWorkspace() {
     try { const result = await fetch("/api/admin/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin }) }); const body = await result.json(); if (!result.ok) throw new Error(body.error); setUnlocked(true); await refresh(); } catch(e) { setError(e instanceof Error ? e.message : "解鎖失敗。"); }
   };
   const lock = async () => { await fetch("/api/admin/session", { method: "DELETE" }); setUnlocked(false); update(emptyWorkspace()); setLoaded(false); };
-  const submitGuest = async (fields: {sessionId: string; name: string; phone: string; note: string}): Promise<Application> => {
+  const submitGuest = async (fields: {sessionIds: string[]; name: string; phone: string; note: string}): Promise<{ receipt: string; applications: Application[] }> => {
     if (writing.current) throw new Error("正在提交，請稍候。");
     writing.current = true; setSaving(true);
     try {
-      const requestUrl = queryMode.current === "admin" ? `/api/workspace?mode=register&session=${encodeURIComponent(fields.sessionId)}` : url.current;
+      const requestUrl = queryMode.current === "admin" ? `/api/workspace?mode=register&sessions=${encodeURIComponent(fields.sessionIds.join(","))}` : url.current;
       const result = await fetch(requestUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "register", ...fields }) });
       const body = await result.json(); if (!result.ok) throw new Error(body.error);
-      const params = new URLSearchParams(window.location.search); params.set("receipt", body.application.id);
+      const params = new URLSearchParams(window.location.search); params.set("receipt", body.receipt);
       if (queryMode.current !== "admin") { window.history.replaceState(null, "", `${window.location.pathname}?${params}`); url.current = `/api/workspace?${params}`; }
-      update((previous) => ({...previous, requests: [body.application, ...previous.requests.filter((item) => item.id !== body.application.id)]}));
-      return body.application;
+      update((previous) => ({...previous, requests: [...body.applications, ...previous.requests.filter((item) => !body.applications.some((entry: Application) => entry.id === item.id))]}));
+      return { receipt: body.receipt, applications: body.applications };
     } finally { writing.current = false; setSaving(false); }
   };
   const publicAttendance = async (personId: string, action: "in" | "out", signature?: SignatureData) => {

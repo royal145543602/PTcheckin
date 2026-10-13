@@ -49,9 +49,12 @@ export async function POST(request: NextRequest) {
     const body = JSON.parse(text);
     if (body.action === "register") {
       if (typeof body.name !== "string" || !body.name.trim() || body.name.length > 40 || typeof body.phone !== "string" || !body.phone.trim() || body.phone.length > 60 || typeof body.note !== "string" || body.note.length > 200) return response({ error: "請填寫有效的姓名與聯絡方式。" }, 400);
-      const application = { id: crypto.randomUUID(), sessionId: body.sessionId, name: body.name.trim(), phone: body.phone.trim(), note: body.note.trim(), state: "pending" as const };
-      await mutatePublic((data) => { const selected = scope(request, data); if (selected.mode !== "register" || !selected.ids.includes(body.sessionId)) throw new Error("請使用此場次的報名連結。"); return addApplication(data, application); });
-      return response({ application }, 201);
+      const ids: string[] = Array.isArray(body.sessionIds) ? body.sessionIds : [body.sessionId];
+      if (!ids.length || ids.length > 30 || ids.some((id: unknown) => typeof id !== "string") || new Set(ids).size !== ids.length) return response({ error: "請選擇 1 至 30 個不同場次。" }, 400);
+      const receipt = crypto.randomUUID();
+      const applications = ids.map((sessionId: string) => ({ id: crypto.randomUUID(), receiptId: receipt, sessionId, name: body.name.trim(), phone: body.phone.trim(), note: body.note.trim(), state: "pending" as const }));
+      await mutatePublic((data) => { const selected = scope(request, data); if (selected.mode !== "register" || ids.some((id: string) => !selected.ids.includes(id))) throw new Error("請使用這些場次的報名連結。"); return applications.reduce((next, application) => addApplication(next, application), data); });
+      return response({ applications, receipt, application: applications[0] }, 201);
     }
     if (body.action === "in" || body.action === "out") {
       if (!signatureValid(body.signature) || typeof body.personId !== "string") return response({ error: "簽名或客戶資料無效。" }, 400);

@@ -22,7 +22,7 @@ export function publicWorkspace(source: Demo, mode: string, sessionIds: string[]
   if (mode === "register") {
     // Only counts are needed; do not send the roster, contacts or payment details.
     result.places = source.places.filter((place) => ids.has(place.sessionId) && !place.removedAt).map((place, i) => ({ sessionId: place.sessionId, personId: `occupied-${i}`, source: "", attendance: "none" }));
-    if (receipt) result.requests = source.requests.filter((request) => request.id === receipt && ids.has(request.sessionId));
+    if (receipt) result.requests = source.requests.filter((request) => (request.id === receipt || request.receiptId === receipt) && ids.has(request.sessionId));
     result.bookingPage = source.bookingPage && { ...source.bookingPage, sessionIds: source.bookingPage.sessionIds.filter((id) => ids.has(id)) };
   } else {
     result.places = source.places.filter((place) => ids.has(place.sessionId) && !place.removedAt).map(({ sessionId, personId, attendance }) => ({ sessionId, personId, attendance, source: "" }));
