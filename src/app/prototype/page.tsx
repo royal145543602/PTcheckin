@@ -398,7 +398,10 @@ export default function PrototypePage() {
   const attendanceText = (value: Place["attendance"]) => value === "in" ? "已簽到" : value === "out" ? "已簽退" : "未簽到";
 
   const toggleSelected = (id: string) => setSelected((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
-  const shownAttendance = roster.filter((place) => data.people.find((person) => person.id === place.personId)!.name.includes(search));
+  const shownAttendance = roster.filter((place) => {
+    const person = data.people.find((person) => person.id === place.personId);
+    return !!person && person.name.includes(search);
+  });
   const batchEligible = roster.filter((place) => attendanceSelected.includes(place.personId) && canRecordAttendance(place.attendance, batchAction));
   const rewindRecords = data.records.filter((record) => rewindIds.includes(record.id) && !record.voided);
   const rewindGroups = data.records.filter((record) => record.sessionId === sessionId && !record.voided).reduce<AttendanceRecord[][]>((groups, record) => {
@@ -548,7 +551,7 @@ export default function PrototypePage() {
   if (publicSurface === "roster") return <div ref={motionRoot} className={s.app}>{demoNotice}<main className={s.publicMain}><header className={s.publicHeader}><div className={s.brand}>PRIMETIME<small>PERFORMANCE LAB MACAU</small></div><Pill>名單展示 · 只讀</Pill></header><h1>{session.title}</h1><p>{dateLabel(session.date)} · {session.time} · {session.coach}</p><div className={s.attendanceSummary}><strong><AnimatedNumber className={s.countValue} value={roster.filter((place) => place.attendance === "in").length} /><small>已簽到</small></strong><strong><AnimatedNumber className={s.countValue} value={roster.filter((place) => place.attendance === "none").length} /><small>未簽到</small></strong><strong><AnimatedNumber className={s.countValue} value={roster.filter((place) => place.attendance === "out").length} /><small>已簽退</small></strong><span>共 {roster.length} 人</span></div><p className={s.syncLabel} role="status">{syncTime ? `狀態已更新 · ${syncTime}` : "工作人員簽到或簽退後，此頁會自動更新。"}</p><div className={s.kioskGrid}>{roster.map((place) => <article className={`${s.kioskPerson} ${place.attendance === "in" ? s.kioskPresent : place.attendance === "out" ? s.kioskOut : ""}`} key={place.personId} data-person={place.personId}><span className={s.cardStatus}>{place.attendance === "in" ? "✓ 已簽到" : place.attendance === "out" ? "↗ 已簽退" : "○ 未簽到"}</span><strong>{data.people.find((person) => person.id === place.personId)?.name}</strong></article>)}</div>{!roster.length && <div className={s.empty}><h2>名單尚未公布</h2><p>工作人員確認後，名單會顯示在這裡。</p></div>}<p className={s.publicFoot}>此頁只供查看本場名單及出席狀態。</p></main></div>;
 
   return <div ref={motionRoot} className={`${s.app} ${view === "kiosk" ? s.kioskMode : ""}`}>
-    <div className={s.cloudStatus} role="status">{cloud.saving ? "正在保存…" : cloud.error || "已連接雲端"}<button onClick={() => cloud.lock()}>鎖定後台</button></div>
+    <div className={s.cloudStatus} role="status">{cloud.saving ? "正在保存…" : cloud.error || (cloud.offline ? "本地預覽 · 資料只保存在本機瀏覽器" : "已連接雲端")}{!cloud.offline && <button onClick={() => cloud.lock()}>鎖定後台</button>}</div>
     {cloud.saving && <div className={s.savingMask} aria-label="正在保存" />}
 
     <aside className={s.sidebar}><div className={s.brand}>PRIMETIME<small>PERFORMANCE LAB MACAU</small></div><nav aria-label="管理导航">{navigation.map((item) => <button key={item.id} className={view === item.id || item.id === "daily" && view === "week" ? s.navActive : ""} onClick={() => { setView(item.id); setSelected([]); setSearch(""); }}>{item.icon}<span>{item.name}</span>{item.id === "requests" && pending.length > 0 && <b>{pending.length}</b>}</button>)}</nav><div className={s.sidebarFoot}><span className={s.onlineDot} /> 雲端工作台<small>管理解鎖有效五分鐘</small></div></aside>
