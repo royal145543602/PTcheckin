@@ -6,7 +6,7 @@ const SESSION_SECONDS = 5 * 60;
 function configured() {
   const pin = process.env.ADMIN_PIN;
   const secret = process.env.ADMIN_SESSION_SECRET;
-  return pin && pin.length >= 8 && secret && secret.length >= 32;
+  return pin && pin.length >= 4 && secret && secret.length >= 32;
 }
 
 function bytesToBase64Url(bytes: Uint8Array) {

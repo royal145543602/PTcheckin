@@ -7,7 +7,7 @@ The public `/kiosk/<team-id>` and `/view/<team-id>` links remain available witho
 1. In the PTcheckin Supabase project, create a **secret** API key (`sb_secret_...`) under Settings → API Keys. Never put this key in source control, `wrangler.jsonc` `vars`, or a `NEXT_PUBLIC_` variable.
 2. On the `ptcheckin` Cloudflare Worker, set these three **Secret** variables before deploying the new code:
    - `SUPABASE_SECRET_KEY`: the Supabase secret API key.
-   - `ADMIN_PIN`: a new, unique password of at least eight characters. The old browser-only default `0000` is removed.
+   - `ADMIN_PIN`: an administrator password of at least four characters (minimum changed at the user's request). The old browser-only default `0000` is removed.
    - `ADMIN_SESSION_SECRET`: at least 32 random characters. This signs the five-minute admin cookie.
 3. Keep `SUPABASE_URL` set to the PTcheckin project URL in `wrangler.jsonc`.
 
