@@ -1,5 +1,5 @@
 import type { SignatureData } from "@/lib/types";
-export type Person = { id: string; name: string; plan: string; phone: string; payment: string; groupId?: string };
+export type Person = { id: string; name: string; plan: string; phone: string; payment: string; groupId?: string; deletedAt?: string };
 export type Session = { id: string; date: string; title: string; time: string; coach: string; capacity: number; public: boolean; registrationLimit?: number };
 export type Place = { sessionId: string; personId: string; source: string; attendance: "none" | "in" | "out"; ruleIds?: string[]; removedByRule?: string; removedAt?: string; signature?: SignatureData };
 export type Application = { id: string; receiptId?: string; sessionId: string; name: string; phone: string; note: string; state: "pending" | "approved" | "waiting" | "rejected"; personId?: string };
